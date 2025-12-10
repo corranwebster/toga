@@ -6,6 +6,7 @@ try:
     from .command import Command
     from .container import Container
     from .fonts import Font
+    from .hardware.camera import Camera
     from .icons import Icon
     from .images import Image
     from .libs import get_testing
@@ -41,6 +42,9 @@ __all__ = [
     "Window",
     "MainWindow",
     "Command",
+    # Hardware
+    "Camera",
+    # Widgets
     "Button",
     "Font",
     "Container",
