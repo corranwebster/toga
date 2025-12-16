@@ -7,6 +7,7 @@ Topic guides are deeper explorations of concepts and issues related to usage of 
 * [Debugging your app](debugging.md) - Learn how to debug issues in Toga.
 * [File management](file-management.md) - Learn how to managing files in Toga using app paths.
 * [Widget layout](layout.md) - Details about widget layout in Toga.
+* [Backends](backends.md) - Details about Backend selection and writing third-party backends and widgets.
 
 ## Internal guides
 
