@@ -63,7 +63,7 @@ So for example, to implement a backend for watchOS, you would add something like
 watchOS = toga_watchOS
 
 [project.entry-points."toga.core.backend.watchOS"]
-App = toga_watchOS.app:App
+App = "toga_watchOS.app:App"
 DocumentApp = "toga_watchOS.app:DocumentApp"
 Button = "toga_watchOS.widgets.button:Button"
 ...
