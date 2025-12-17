@@ -38,7 +38,7 @@ So for example, the iOS canvas widget is registered in the `pyproject.toml` for 
 
 ``` toml
 [project.entry-points."toga.core.backend.toga_iOS"]
-Canvas = toga_iOS.widgets.canvas:Canvas
+Canvas = "toga_iOS.widgets.canvas:Canvas"
 ```
 
 ## Adding a Third-Party Implementation for an Unimplemented Core Widget
@@ -49,7 +49,7 @@ So say you had implemented a `Table` widget for iOS in a module `my_ios_app.widg
 
 ``` toml
 [project.entry-points."toga.core.backend.toga_iOS"]
-Table = my_ios_app.widgets.table:Table
+Table = "my_ios_app.widgets.table:Table"
 ```
 
 ## Adding a new Backend
@@ -64,8 +64,8 @@ watchOS = toga_watchOS
 
 [project.entry-points."toga.core.backend.watchOS"]
 App = toga_watchOS.app:App
-DocumentApp = toga_watchOS.app:DocumentApp
-Button = toga_watchOS.widgets.button:Button
+DocumentApp = "toga_watchOS.app:DocumentApp"
+Button = "toga_watchOS.widgets.button:Button"
 ...
 ```
 
@@ -89,9 +89,9 @@ class MyWidget(Widget):
         self._impl = MyWidget(self)
 ```
 
-But if you watch your application to be cross-platform, you will have multiple implementations for different backends, and you should do the following:
+But if you want your application to be cross-platform, you will have multiple implementations for different backends, and you should do the following:
 
-- create a new Factory object for your application or library with it's own project name and add that as a new attribute to the interface you've written.
+- create a new `Factory` object for your application or library with it's own project name and make that factory object part of your internal API.
 - in your `pyproject.toml` add entrypoints for each implementation of the interface of in groups of the form `toga.<project_name>.backend.<backend_name>`.
 
 Particularly complex applications or libraries which are defining many new widgets may find it useful to follow Toga's example and break out the implementations into separate projects to make dependency management easier.
@@ -146,10 +146,10 @@ cocoa = ["toga_cocoa"]
 gtk = ["toga_gtk"]
 
 [project.entry-points."toga.my_app.backend.toga_cocoa"]
-BitmapView = my_app.cocoa.bitmap_view:BitmapView
+BitmapView = "my_app.cocoa.bitmap_view:BitmapView"
 
 [project.entry-points."toga.my_app.backend.toga_gtk"]
-BitmapView = my_app.gtk.bitmap_view:BitmapView
+BitmapView = "my_app.gtk.bitmap_view:BitmapView"
 ```
 
 Note that instead of the "toga.core.backend..." groups, you are contributing to the "toga.my_app.backend..." groups, matching the project name of the toolkit object
@@ -177,7 +177,7 @@ And then add it to *your* `pyproject.toml` contributing to *their* entrypoint gr
 qt = ["toga_qt"]
 
 [project.entry-points."toga.my_app.backend.toga_qt"]
-BitmapView = another_app.qt.bitmap_view:BitmapView
+BitmapView = "another_app.qt.bitmap_view:BitmapView"
 ```
 
 Once you've done this you can import the interface from their library and use it in your application with the backend you want:
@@ -248,7 +248,7 @@ class MyLineEdit(LineEdit):
 And in the `pyproject.toml` have entries like
 ``` toml
 [project.entry-points."toga.my_app.backend.toga_cocoa"]
-LineInput = my_app.cocoa.line_edit:MyLineEdit
+LineInput = "my_app.cocoa.line_edit:MyLineEdit"
 ```
 
 And then in your App, or anywhere else you are creating widgets, do something like:
@@ -281,7 +281,7 @@ In the extreme, you could create your own factory instance and monkeypatch `toga
 
 In comparison to the current system, this makes the following changes:
 
-- the notion of a "platform", or the linking between platforms and backends, is diminished. In practice, most of the time an application will have a well-controlled environment and so there will be exactly one backend. A regular entyrpoint search should be enough, augmented by the ability to override with an environment variable to force selection which would be used by developers who happen to have multiple backends in an environment.
+- the notion of a "platform", or the linking between platforms and backends, is diminished. In practice, most of the time an application will have a well-controlled environment and so there will be exactly one backend. A regular entrypoint search should be enough, augmented by the ability to override with an environment variable to force selection which would be used by developers who happen to have multiple backends in an environment.
 - This has the side-effect of making support for new platforms easier: there is no need to update `toga.platforms._TOGA_PLATFORMS` every time a new platform comes along (eg. currently OpenBSD isn't in this list, and isn't listed as an entrypoint for Gtk or Qt backends, but I would expect the GTK or Qt backends to work on a correctly configured system).
 - we might want to have a manually curated list of "preferred backends" for each platform, but even them that feels like a problem for Briefcase more than Toga.
 - the backend "factory" modules can be dispensed with completely.
