@@ -60,7 +60,7 @@ So for example, to implement a backend for watchOS, you would add something like
 
 ``` toml
 [project.entry-points."toga.core.backends"]
-watchOS = toga_watchOS
+watchOS = "toga_watchOS"
 
 [project.entry-points."toga.core.backend.watchOS"]
 App = "toga_watchOS.app:App"
