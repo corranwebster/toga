@@ -15,6 +15,7 @@ try:
     from .widgets.box import Box
     from .widgets.button import Button
     from .widgets.dateinput import DateInput
+    from .widgets.detailedlist import DetailedList
     from .widgets.imageview import ImageView
     from .widgets.label import Label
     from .widgets.multilinetextinput import MultilineTextInput
@@ -22,6 +23,7 @@ try:
     from .widgets.passwordinput import PasswordInput
     from .widgets.progressbar import ProgressBar
     from .widgets.switch import Switch
+    from .widgets.table import Table
     from .widgets.textinput import TextInput
     from .widgets.timeinput import TimeInput
     from .window import MainWindow, Window
@@ -48,6 +50,7 @@ __all__ = [
     "Command",
     "Button",
     "DateInput",
+    "DetailedList",
     "Font",
     "Container",
     "Box",
@@ -57,6 +60,7 @@ __all__ = [
     "PasswordInput",
     "ProgressBar",
     "Switch",
+    "Table",
     "TextInput",
     "TimeInput",
     "ImageView",
