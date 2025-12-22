@@ -340,7 +340,17 @@ async def test_paths(canvas, probe):
     canvas.context.move_to(160, 160)
     canvas.context.stroke(RED)
 
-    await probe.redraw("Pair of triangles should be drawn")
+    # A path is not cleared after being stroked or filled.
+    canvas.context.move_to(20, 10)
+    canvas.context.line_to(60, 10)
+    canvas.context.stroke(color="cyan")
+    canvas.context.move_to(60, 10)
+    canvas.context.line_to(100, 10)
+    canvas.context.fill(color="red")
+    canvas.context.line_to(140, 10)
+    canvas.context.stroke()
+
+    await probe.redraw("Pair of triangles and a black line should be drawn")
     assert_reference(probe, "paths", threshold=0.04)
 
 
