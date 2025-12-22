@@ -586,7 +586,7 @@ async def test_stroke_and_fill(canvas, probe):
     canvas.context.line_to(x=90, y=40)
     canvas.context.line_to(x=150, y=160)
     canvas.context.line_to(x=110, y=160)
-    canvas.context.fill(color=CORNFLOWERBLUE, fill_rule=FillRule.EVENODD)
+    canvas.context.fill(color=GOLDENROD, fill_rule=FillRule.EVENODD)
     canvas.context.stroke(color=REBECCAPURPLE)
 
     await probe.redraw("Stroke should be drawn")
