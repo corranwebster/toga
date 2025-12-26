@@ -3,7 +3,7 @@ from PySide6.QtGui import QAction, QCursor, QFont, QFontMetrics, QIcon, QPainter
 from PySide6.QtWidgets import QListView, QMenu, QStyle, QStyledItemDelegate
 from travertino.size import at_least
 
-from ..sources.ListSourceModel import ListSourceModel
+from ..sources.list_source_model import ListSourceModel
 from .base import Widget
 
 ICON_SIZE = 32

@@ -26,6 +26,7 @@ try:
     from .widgets.table import Table
     from .widgets.textinput import TextInput
     from .widgets.timeinput import TimeInput
+    from .widgets.tree import Tree
     from .window import MainWindow, Window
 except ModuleNotFoundError as exc:  # pragma: no cover
     if exc.name == "PySide6":
@@ -63,6 +64,7 @@ __all__ = [
     "Table",
     "TextInput",
     "TimeInput",
+    "Tree",
     "ImageView",
     "dialogs",
 ]
