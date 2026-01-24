@@ -11,7 +11,7 @@ class TogaDemo(toga.App):
         self.main_window = toga.MainWindow()
 
         left_table = toga.Table(
-            headings=["Hello", "World"],
+            columns=["Hello", "World"],
             data=[
                 ("root1", "value1"),
                 ("root2", "value2"),

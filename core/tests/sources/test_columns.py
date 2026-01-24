@@ -52,6 +52,29 @@ def test_accessor_column(heading, accessor, heading_property, accessor_property)
     assert column.accessor == accessor_property
 
 
+def test_accessor_column_equality():
+    """AccessorColumns can be compared for equality."""
+    column = AccessorColumn("title", "attribute")
+
+    assert column == AccessorColumn("title", "attribute")
+    assert column != AccessorColumn("title")
+    assert column != AccessorColumn(accessor="attribute")
+
+
+def test_accessor_column_repr():
+    """AccessorColumn have a repr()."""
+    column = AccessorColumn("title", "attribute")
+
+    assert repr(column) == "AccessorColumn(heading='title', accessor='attribute')"
+
+
+def test_accessor_column_hash():
+    """AccessorColumns can be hashed."""
+    column = AccessorColumn("title", "attribute")
+
+    assert hash(column) == hash((AccessorColumn, "title", "attribute"))
+
+
 def test_accessor_column_failure():
     """An AccessorColumn requires at least an heading or an accessor."""
     with pytest.raises(
