@@ -45,6 +45,7 @@ def values():
         date(1960, 12, 31),
         date(2020, 2, 29),  # Leap day
         date(2100, 1, 1),
+        date(3742, 1, 1),
         date(8999, 12, 31),
     ]
 
@@ -81,10 +82,7 @@ async def widget():
     return toga.DateInput()
 
 
-test_cleanup = build_cleanup_test(
-    toga.DateInput,
-    xfail_platforms=("android",),
-)
+test_cleanup = build_cleanup_test(toga.DateInput)
 
 
 async def test_init():

@@ -15,20 +15,16 @@ import testbed.app
 
 def run_tests(app, cov, args, report_coverage, run_slow, running_in_ci):
     try:
-        # Wait for the app's main window to be visible. Retrieving the actual
-        # main window will raise an exception until the app is actually initialized.
+        # Wait for the app's main window to be visible. The visibility property
+        # is set by the app in an on_running handler; this is required because
+        # visibility is a GUI property, and accessing that property from a
+        # non-GUI thread can cause problems in some GUI toolkits.
         print("Waiting for app to be ready for testing... ", end="", flush=True)
         i = 0
         ready = False
         while i < 100 and not ready:
-            try:
-                main_window = app.main_window
-                if main_window.visible:
-                    ready = True
-            except ValueError:
-                pass
-
             time.sleep(0.05)
+            ready = getattr(app, "is_visible", False)
             i += 1
 
         if not ready:
@@ -152,6 +148,15 @@ def main(main_package_name, backend_override=None):
             ),
             "no-cover-if-gtk4": "os_environ.get('TOGA_GTK', '') == '4'",
             "no-cover-if-gtk3": "os_environ.get('TOGA_GTK', '3') == '3'",
+            "no-cover-unless-plain-gtk4": (
+                "os_environ.get('TOGA_GTK', '') != '4' "
+                "or os_environ.get('TOGA_GTKLIB', '') != ''"
+            ),
+            "no-cover-unless-plain-gtk": "os_environ.get('TOGA_GTKLIB', '') != ''",
+            "no-cover-unless-libadwaita": (
+                "os_environ.get('TOGA_GTK', '') != '4' "
+                "or os_environ.get('TOGA_GTKLIB', '') != 'Adw'"
+            ),
         },
     )
     cov.start()

@@ -54,7 +54,7 @@ async def placeholder(request, widget):
     widget.placeholder = request.param
 
 
-test_cleanup = build_cleanup_test(toga.TextInput, xfail_platforms=("android",))
+test_cleanup = build_cleanup_test(toga.TextInput)
 
 
 async def test_value_not_hidden(widget, probe):
@@ -269,16 +269,18 @@ async def test_undo_redo(widget, probe):
     assert probe.value == text_1
 
     # undo
+    expected_text = text_0 if probe.redo_available else ""
     await probe.undo()
-    await probe.redraw(f"Widget value should be {text_0!r}")
-    assert widget.value == text_0
-    assert probe.value == text_0
+    await probe.redraw(f"Widget value should be {expected_text!r}")
+    assert widget.value == expected_text
+    assert probe.value == expected_text
 
     # redo
+    expected_text = text_1 if probe.redo_available else ""
     await probe.redo()
-    await probe.redraw(f"Widget value should be {text_1!r}")
-    assert widget.value == text_1
-    assert probe.value == text_1
+    await probe.redraw(f"Widget value should be {expected_text!r}")
+    assert widget.value == expected_text
+    assert probe.value == expected_text
 
 
 async def test_no_event_on_initialization(widget, probe, on_change):

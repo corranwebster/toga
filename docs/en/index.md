@@ -54,7 +54,7 @@ Deeper explorations of concepts and issues related to Toga usage.
 
 ## [Reference](reference/index.md)
 
-Technical documentation such as [Toga's API](reference/api/index.md), details on [platform support](reference/platforms/index.md), and other detailed reference information (including [overall architectural details](reference/internals/architecture.md)).
+Technical documentation such as [Toga's API](reference/api/index.md), details on [platform support](reference/platforms/index.md), and other detailed reference information (including [overall architectural details](topics/architecture.md)).
 
 ## [About Toga](about/index.md)
 
@@ -76,4 +76,4 @@ If you have any concerns about this code of conduct, or you wish to report a vio
 
 ### Contributing
 
-If you experience problems with Toga, [log them on GitHub](https://github.com/beeware/toga/issues). If you want to contribute code, please follow the [Toga code contribution guide](how-to/contribute/code.md). For documentation contributions, follow the [Toga docs contribution guide](how-to/contribute/docs.md).
+If you experience problems with Toga, [log them on GitHub](https://github.com/beeware/toga/issues). If you want to contribute to Toga, you can read through the [Toga contribution guides](how-to/contribute/index.md).

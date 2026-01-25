@@ -42,15 +42,6 @@ class PythonAppDelegate(UIResponder):
     def applicationWillTerminate_(self, application) -> None:
         print("App about to Terminate.")
 
-    @objc_method
-    def application_didChangeStatusBarOrientation_(
-        self, application, oldStatusBarOrientation: int
-    ) -> None:
-        """This callback is invoked when rotating the device from landscape to portrait
-        and vice versa."""
-        App.app.interface.current_window.on_resize()
-        App.app.interface.main_window.content.refresh()
-
 
 class App:
     # iOS apps exit when the last window is closed
