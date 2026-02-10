@@ -54,6 +54,19 @@ def test_notify():
     listener2.message5.assert_not_called()
 
 
+def test_pre_notify():
+    source = Source()
+    listener1 = Mock()
+    source.add_listener(listener1)
+
+    with source.pre_notify("message", arg1=1, arg2=2):
+        # Pre message called
+        listener1.pre_message.assert_called_once_with(arg1=1, arg2=2)
+
+    # Post message called
+    listener1.post_message.assert_called_once_with(arg1=1, arg2=2)
+
+
 def test_missing_listener_method():
     """If a listener doesn't implement a notification method, the notification is
     ignored."""
@@ -69,6 +82,82 @@ def test_missing_listener_method():
     source.notify("message1")
 
     full_listener.message1.assert_called_once_with()
+
+
+def test_deprecate_insert():
+    class Listener:
+        pass
+
+    source = Source()
+    listener = Listener()
+    listener.post_insert = Mock()
+
+    source.add_listener(listener)
+
+    # Warn about the notification
+    with pytest.warns(
+        DeprecationWarning, match=r"Listener does not have 'insert' method,"
+    ):
+        source.notify("insert", arg1=1, arg2=2)
+
+    # post_insert should be called
+    listener.post_insert.assert_called_once_with(arg1=1, arg2=2)
+
+    del listener.post_insert
+    listener.insert = Mock()
+
+    # Warn about the notification
+    with pytest.warns(
+        DeprecationWarning, match=r"Listener .* does not have 'post_insert' method,"
+    ):
+        source.notify("post_insert", arg1=1, arg2=2)
+
+    # insert should be called
+    listener.insert.assert_called_once_with(arg1=1, arg2=2)
+
+    del listener.insert
+
+    # if neither, no warning, no calls
+    source.notify("insert", arg1=1, arg2=2)
+    source.notify("post_insert", arg1=1, arg2=2)
+
+
+def test_deprecate_remove():
+    class Listener:
+        pass
+
+    source = Source()
+    listener = Listener()
+    listener.post_remove = Mock()
+
+    source.add_listener(listener)
+
+    # Warn about the notification
+    with pytest.warns(
+        DeprecationWarning, match=r"Listener does not have 'remove' method,"
+    ):
+        source.notify("remove", arg1=1, arg2=2)
+
+    # post_remove should be called
+    listener.post_remove.assert_called_once_with(arg1=1, arg2=2)
+
+    del listener.post_remove
+    listener.remove = Mock()
+
+    # Warn about the notification
+    with pytest.warns(
+        DeprecationWarning, match=r"Listener .* does not have 'post_remove' method,"
+    ):
+        source.notify("post_remove", arg1=1, arg2=2)
+
+    # remove should be called
+    listener.remove.assert_called_once_with(arg1=1, arg2=2)
+
+    del listener.remove
+
+    # if neither, no warning, no calls
+    source.notify("remove", arg1=1, arg2=2)
+    source.notify("post_remove", arg1=1, arg2=2)
 
 
 def test_deprecate_listener():

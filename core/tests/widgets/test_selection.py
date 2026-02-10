@@ -268,7 +268,7 @@ def test_add_item(widget, source, on_change_handler):
     source.append({"key": "new", "value": 999})
 
     # The widget adds the item
-    assert_action_performed_with(widget, "insert item", index=3)
+    assert_action_performed_with(widget, "post insert item", index=3)
 
     # This doesn't change the widget.
     on_change_handler.assert_not_called()
@@ -283,7 +283,7 @@ def test_insert_item(widget, source, on_change_handler):
     source.insert(1, {"key": "new", "value": 999})
 
     # The widget adds the item
-    assert_action_performed_with(widget, "insert item", index=1)
+    assert_action_performed_with(widget, "post insert item", index=1)
 
     # This doesn't change the widget
     on_change_handler.assert_not_called()
@@ -299,8 +299,9 @@ def test_remove(widget, source, on_change_handler):
     item = source[0]
     source.remove(item)
 
-    # The widget adds the item
-    assert_action_performed_with(widget, "remove item", index=0, item=item)
+    # The widget removes the item
+    assert_action_performed_with(widget, "pre remove item", index=0, item=item)
+    assert_action_performed_with(widget, "post remove item", index=0, item=item)
 
     # This changes the selection
     on_change_handler.assert_not_called()
@@ -314,8 +315,9 @@ def test_remove_selected(widget, source, on_change_handler):
 
     source.remove(selection)
 
-    # The widget adds the item
-    assert_action_performed_with(widget, "remove item", index=1, item=selection)
+    # The widget removes the item
+    assert_action_performed_with(widget, "pre remove item", index=1, item=selection)
+    assert_action_performed_with(widget, "post remove item", index=1, item=selection)
 
     # This changes the selection
     on_change_handler.assert_called_with(widget)
@@ -344,7 +346,7 @@ def test_change_source_empty(widget, on_change_handler):
 
     # The widget data has been cleared and refreshed
     assert_action_performed(widget, "clear")
-    assert_action_not_performed(widget, "insert item")
+    assert_action_not_performed(widget, "post insert item")
     assert_action_performed(widget, "refresh")
 
     # The widget must have cleared its selection
@@ -372,8 +374,8 @@ def test_change_source(widget, on_change_handler):
 
     # The widget source has changed
     assert_action_performed(widget, "clear")
-    assert_action_performed_with(widget, "insert item", item=widget.items[0])
-    assert_action_performed_with(widget, "insert item", item=widget.items[1])
+    assert_action_performed_with(widget, "post insert item", item=widget.items[0])
+    assert_action_performed_with(widget, "post insert item", item=widget.items[1])
     assert_action_performed(widget, "refresh")
 
     # The widget must have cleared its selection

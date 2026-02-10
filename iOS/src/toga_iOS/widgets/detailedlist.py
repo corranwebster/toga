@@ -200,7 +200,7 @@ class DetailedList(Widget):
     def pre_remove(self, index, item):
         pass
 
-    def insert(self, index, item):
+    def post_insert(self, index, item):
         self.native.reloadData()
 
     def change(self, item):

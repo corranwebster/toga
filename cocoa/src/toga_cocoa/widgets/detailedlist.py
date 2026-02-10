@@ -182,13 +182,13 @@ class DetailedList(Widget):
     def pre_remove(self, index, item):
         pass
 
-    def insert(self, index, item):
+    def post_insert(self, index, item):
         self.native_detailedlist.reloadData()
 
     def change(self, item):
         self.native_detailedlist.reloadData()
 
-    def remove(self, index, item):
+    def post_remove(self, index, item):
         self.native_detailedlist.reloadData()
 
         # After deletion, the selection changes, but Cocoa doesn't send

@@ -159,7 +159,7 @@ class Table(Widget):
     def pre_remove(self, index, item):
         pass
 
-    def insert(self, index, item):
+    def post_insert(self, index, item):
         # set parent = None if inserting to the root item
         index_set = NSIndexSet.indexSetWithIndex(index)
 
@@ -178,7 +178,7 @@ class Table(Widget):
             row_indexes, columnIndexes=column_indexes
         )
 
-    def remove(self, index, item):
+    def post_remove(self, index, item):
         indexes = NSIndexSet.indexSetWithIndex(index)
         self.native_table.removeRowsAtIndexes(
             indexes, withAnimation=NSTableViewAnimation.EffectNone

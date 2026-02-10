@@ -256,7 +256,7 @@ class DetailedList(Widget):
     def pre_remove(self, index, item):
         pass
 
-    def insert(self, index, item):
+    def post_insert(self, index, item):
         self.hide_actions()
         item_impl = self.row_factory(item)
         self.store.insert(index, item_impl)

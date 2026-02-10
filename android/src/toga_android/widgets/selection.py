@@ -48,7 +48,7 @@ class Selection(ContainedWidget):
     def pre_remove(self, index, item):
         pass
 
-    def insert(self, index, item):
+    def post_insert(self, index, item):
         self.adapter.insert(self.interface._title_for_item(item), index)
         if self.last_selection is None:
             self.select_item(0)
@@ -64,7 +64,7 @@ class Selection(ContainedWidget):
         self.adapter.insert(self.interface._title_for_item(item), index)
         self.adapter.remove(self.adapter.getItem(index + 1))
 
-    def remove(self, index, item=None):
+    def post_remove(self, index, item=None):
         self.adapter.remove(self.adapter.getItem(index))
 
         # Adjust the selection index, but only generate an event if the selected item

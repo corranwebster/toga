@@ -296,7 +296,7 @@ class Tree(Widget):
     def pre_insert(self, index, item, parent=None):
         self.native_model.pre_insert_item(item=item, index=index, parent=parent)
 
-    def insert(self, index, item, parent=None):
+    def post_insert(self, index, item, parent=None):
         self.native_model.insert_item(item=item, index=index, parent=parent)
 
     def change(self, item):
@@ -305,7 +305,7 @@ class Tree(Widget):
     def pre_remove(self, index, item, parent=None):
         self.native_model.pre_remove_item(item=item, index=index, parent=parent)
 
-    def remove(self, index, item, parent=None):
+    def post_remove(self, index, item, parent=None):
         self.native_model.remove_item(item=item, index=index, parent=parent)
 
     def clear(self):

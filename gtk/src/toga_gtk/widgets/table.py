@@ -121,7 +121,7 @@ class Table(Widget):
     def pre_remove(self, index, item):
         pass
 
-    def insert(self, index, item):
+    def post_insert(self, index, item):
         row = TogaRow(item)
         values = [row]
         for column in self.interface._columns:
@@ -144,7 +144,7 @@ class Table(Widget):
             row[i * 2 + 2] = row[0].text(column, self.interface.missing_value)
             row[0].warn_widget(column)
 
-    def remove(self, index, item):
+    def post_remove(self, index, item):
         del self.store[index]
 
     def clear(self):

@@ -217,13 +217,13 @@ class DetailedList(Widget):
     def pre_remove(self, index, item):
         pass
 
-    def insert(self, index, item):
+    def post_insert(self, index, item):
         self._load_data()
 
     def change(self, item):
         self._load_data()
 
-    def remove(self, index, item):
+    def post_remove(self, index, item):
         self._load_data()
 
     def clear(self):

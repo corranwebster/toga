@@ -179,7 +179,7 @@ class Table(Widget):
     def pre_remove(self, index, item):
         pass
 
-    def insert(self, index, item):
+    def post_insert(self, index, item):
         self.change_source(getattr(self.interface, "data", None))
 
     def clear(self):
@@ -188,7 +188,7 @@ class Table(Widget):
     def change(self, item):
         self.change_source(getattr(self.interface, "data", None))
 
-    def remove(self, index, item):
+    def post_remove(self, index, item):
         self.change_source(getattr(self.interface, "data", None))
 
     def scroll_to_row(self, index):

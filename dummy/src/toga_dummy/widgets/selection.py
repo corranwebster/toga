@@ -12,8 +12,8 @@ class Selection(Widget):
     def pre_remove(self, index, item):
         self._action("pre remove item", index=index, item=item)
 
-    def insert(self, index, item):
-        self._action("insert item", index=index, item=item)
+    def post_insert(self, index, item):
+        self._action("post insert item", index=index, item=item)
         self._items.insert(index, item)
         # If this is the first item to be inserted, it should be selected.
         if len(self._items) == 1:
@@ -22,8 +22,8 @@ class Selection(Widget):
     def change(self, item):
         self._action("change item", item=item)
 
-    def remove(self, index, item):
-        self._action("remove item", index=index, item=item)
+    def post_remove(self, index, item):
+        self._action("post remove item", index=index, item=item)
         del self._items[index]
 
         # If we deleted the selected item, reset the selection.

@@ -197,7 +197,7 @@ class Tree(Widget):
     def pre_remove(self, index, item, parent=None):
         pass
 
-    def insert(self, index, item, parent=None):
+    def post_insert(self, index, item, parent=None):
         index_set = NSIndexSet.indexSetWithIndex(index)
         self.native_tree.insertItemsAtIndexes(
             index_set,
@@ -208,7 +208,7 @@ class Tree(Widget):
     def change(self, item):
         self.native_tree.reloadItem(node_impl(item))
 
-    def remove(self, index, item, parent=None):
+    def post_remove(self, index, item, parent=None):
         try:
             index = self.native_tree.childIndexForItem(item._impl)
             index_set = NSIndexSet.indexSetWithIndex(index)

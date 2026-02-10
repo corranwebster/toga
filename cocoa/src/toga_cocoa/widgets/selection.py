@@ -48,7 +48,7 @@ class Selection(Widget):
     def pre_remove(self, index, item):
         pass
 
-    def insert(self, index, item):
+    def post_insert(self, index, item):
         # Issue 2319 - if item titles are not unique, macOS will move the existing item,
         # rather than creating a duplicate item. To work around this, create an item
         # with a temporary but unique name, then change the name. `_title_for_item()`
@@ -72,7 +72,7 @@ class Selection(Widget):
         # Changing the item text can change the layout size
         self.interface.refresh()
 
-    def remove(self, index, item):
+    def post_remove(self, index, item):
         selection_change = self.native.indexOfSelectedItem == index
 
         self.native.removeItemAtIndex(index)

@@ -25,13 +25,13 @@ class Tree(Widget):
     def pre_remove(self, index, item, parent=None):
         self._action("pre remove item", index=index, item=item, parent=parent)
 
-    def insert(self, index, item, parent=None):
+    def post_insert(self, index, item, parent=None):
         self._action("insert node", parent=parent, index=index, item=item)
 
     def change(self, item):
         self._action("change node", item=item)
 
-    def remove(self, index, item, parent=None):
+    def post_remove(self, index, item, parent=None):
         self._action("remove node", parent=parent, index=index, item=item)
 
     def clear(self):

@@ -23,7 +23,7 @@ class Selection(Widget):
     def pre_remove(self, index, item):
         pass
 
-    def insert(self, index, item):
+    def post_insert(self, index, item):
         display_text = self.interface._title_for_item(item)
         option = self._create_native_widget("sl-option")
         option.value = str(index)

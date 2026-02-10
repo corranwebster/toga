@@ -157,7 +157,7 @@ class Source(Generic[ListenerT]):
         try:
             yield
         finally:
-            self.notify(notification, **kwargs)
+            self.notify(f"post_{notification}", **kwargs)
 
     def notify(self, notification: str, **kwargs: object) -> None:
         """Notify all listeners an event has occurred.
@@ -166,13 +166,47 @@ class Source(Generic[ListenerT]):
         :param kwargs: The data associated with the notification.
         """
         for listener in self._listeners:
-            try:
-                method = getattr(listener, notification)
-            except AttributeError:
-                method = None
-
-            if method:
+            if (method := getattr(listener, notification, None)) is not None:
                 method(**kwargs)
+            elif notification in {"post_insert", "post_remove"}:
+                # Handle backwards compatibility for listener:
+                # Feb 2026: In 0.5.3 and earlier, post_insert and post_remove
+                # were insert and remove
+
+                # try notification without the "post_"
+                notification = notification[5:]
+                if (method := getattr(listener, notification, None)) is not None:
+                    import warnings
+
+                    warnings.warn(
+                        f"Listener {listener!r} does not have 'post_{notification}' "
+                        f"method, using '{notification}' method instead. "
+                        f"Update the listener to use the 'post_{notification}' "
+                        "method.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
+                    method(**kwargs)
+            elif notification in {"insert", "remove"}:
+                # Handle backwards compatibility for source:
+                # Feb 2026: In 0.5.3 and earlier, post_insert and post_remove
+                # were insert and remove
+
+                # try notification with "post_"
+                if (
+                    method := getattr(listener, f"post_{notification}", None)
+                ) is not None:
+                    import warnings
+
+                    warnings.warn(
+                        f"Listener does not have '{notification}' method, "
+                        f"using 'post_{notification}' method instead. "
+                        f"Update {self!r} to generate 'post_{notification}' "
+                        "notifications.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
+                    method(**kwargs)
 
 
 def __getattr__(name):
@@ -180,7 +214,7 @@ def __getattr__(name):
         import warnings
 
         # Alias for backwards compatibility:
-        # Jan 2025: In 0.5.3 and earlier, ListListener was named Listener
+        # Jan 2026: In 0.5.3 and earlier, ListListener was named Listener
         global Listener
         Listener = ListListener
         warnings.warn(

@@ -263,7 +263,8 @@ def test_insert_kwarg(source):
     assert row.val1 == "new element"
     assert row.val2 == 999
 
-    listener.insert.assert_called_once_with(index=1, item=row)
+    listener.pre_insert.assert_called_once_with(index=1, item=row)
+    listener.post_insert.assert_called_once_with(index=1, item=row)
 
 
 def test_insert_positional(source):
@@ -280,7 +281,8 @@ def test_insert_positional(source):
     assert row.val1 == "new element"
     assert row.val2 == 999
 
-    listener.insert.assert_called_once_with(index=1, item=row)
+    listener.pre_insert.assert_called_once_with(index=1, item=row)
+    listener.post_insert.assert_called_once_with(index=1, item=row)
 
 
 def test_append_dict(source):
@@ -297,7 +299,8 @@ def test_append_dict(source):
     assert row.val1 == "new element"
     assert row.val2 == 999
 
-    listener.insert.assert_called_once_with(index=3, item=row)
+    listener.pre_insert.assert_called_once_with(index=3, item=row)
+    listener.post_insert.assert_called_once_with(index=3, item=row)
 
 
 def test_append_positional(source):
@@ -314,7 +317,8 @@ def test_append_positional(source):
     assert row.val1 == "new element"
     assert row.val2 == 999
 
-    listener.insert.assert_called_once_with(index=3, item=row)
+    listener.pre_insert.assert_called_once_with(index=3, item=row)
+    listener.post_insert.assert_called_once_with(index=3, item=row)
 
 
 def test_del(source):
@@ -333,7 +337,8 @@ def test_del(source):
     assert source[1].val1 == "third"
     assert source[1].val2 == 333
 
-    listener.remove.assert_called_once_with(item=row, index=1)
+    listener.pre_remove.assert_called_once_with(item=row, index=1)
+    listener.post_remove.assert_called_once_with(item=row, index=1)
 
 
 def test_remove(source):
@@ -352,7 +357,8 @@ def test_remove(source):
     assert source[1].val1 == "third"
     assert source[1].val2 == 333
 
-    listener.remove.assert_called_once_with(item=row, index=1)
+    listener.pre_remove.assert_called_once_with(item=row, index=1)
+    listener.post_remove.assert_called_once_with(item=row, index=1)
 
 
 def test_index(source):
