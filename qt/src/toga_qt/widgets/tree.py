@@ -1,10 +1,11 @@
 import logging
 import warnings
-from typing import Any
+from typing import Any, overload
 
 from PySide6.QtCore import (
     QAbstractItemModel,
     QModelIndex,
+    QObject,
     QPersistentModelIndex,
     Qt,
 )
@@ -38,19 +39,20 @@ class TreeSourceModel(QAbstractItemModel):
         # Nothing to do, clear has already happened
         self.endResetModel()
 
+    def pre_insert_item(self, index, item, parent=None):
+        pass
+
     def insert_item(self, index, item, parent=None):
-        # Have to do a complete reset or stale row references in selections
-        # give incorrect results
-        self.beginResetModel()
-        # Nothing to do, insertion has already happened
-        self.endResetModel()
+        qt_index = self._get_index(parent)
+        self.beginInsertRows(qt_index, index, index)
+        self.endInsertRows()
+
+    def pre_remove_item(self, index, item, parent=None):
+        qt_parent = self._get_index(parent)
+        self.beginRemoveRows(qt_parent, index, index)
 
     def remove_item(self, index, item, parent=None):
-        # Have to do a complete reset or stale row references in selections
-        # cause segfaults
-        self.beginResetModel()
-        # Nothing to do, removal has already happened
-        self.endResetModel()
+        self.endRemoveRows()
 
     def item_changed(self, item):
         if self._source is None:
@@ -62,16 +64,28 @@ class TreeSourceModel(QAbstractItemModel):
         )
         self.dataChanged.emit(start_index, end_index)
 
+    def _get_rows_from_source(self, node):
+        rows = []
+        while node._parent is not None:
+            rows.append(node._parent.index(node))
+            node = node._parent
+        rows.append(self._source.index(node))
+        return rows
+
+    def _get_rows_from_index(self, index: QModelIndex | QPersistentModelIndex):
+        rows = []
+        while index.isValid():
+            rows.append(index.row())
+            index = index.parent()
+        return rows
+
     def _get_index(self, node, column=0) -> QModelIndex:
         if self._source is None or not hasattr(node, "_parent"):
             # The source can briefly be None during widget creation
             # and bad user implementations of nodes could lead here.
             return INVALID_INDEX  # pragma: no cover
-        rows = []
-        while node._parent is not None:
-            rows.append(node._parent.index(node))
-            node = node._parent
-        index = self.index(self._source.index(node), column, INVALID_INDEX)
+        rows = self._get_rows_from_source(node)
+        index = INVALID_INDEX
         while rows:
             index = self.index(rows.pop(), column, index)
         return index
@@ -86,33 +100,44 @@ class TreeSourceModel(QAbstractItemModel):
         # to future-proof for things like drag-and-drop support.
         if isinstance(index, QModelIndex):
             if index.isValid():
-                return index.internalPointer()
+                parent = index.internalPointer()
             else:
                 return self._source
+            if len(parent) < index.row():
+                return None
+            else:
+                return parent[index.row()]
         else:  # pragma: no cover
             # build list of row indexes in parents
-            rows = self._get_rows(index)
+            rows = self._get_rows_from_index(index)
             # climb down tree to find node we want
             node = self._source
             while rows:
                 node = node[rows.pop()]
             return node
 
-    def _get_rows(self, index: QModelIndex | QPersistentModelIndex):
-        rows = []
-        while index.isValid():
-            rows.append(index.row())
-            index = index.parent()
-        return rows
+    @overload
+    def parent(self) -> QObject: ...
+    @overload
+    def parent(self, index: QModelIndex | QPersistentModelIndex) -> QModelIndex: ...
 
-    def parent(self, index: QModelIndex) -> QModelIndex:
+    def parent(self, index=None):
+        # handle QObject.parent()
+        if index is None:
+            return super().parent()
+
         # index should always be valid, but check anyway
         if index.isValid():  # pragma: no branch
-            node = index.internalPointer()
-            if node._parent is not None:
-                parent = node._parent
-                row = parent.index(node)
-                return self.createIndex(row, 0, parent)
+            parent_node = index.internalPointer()
+            if parent_node is self._source:
+                return INVALID_INDEX
+            elif parent_node._parent is not None:
+                grandparent = parent_node._parent
+            else:
+                grandparent = self._source
+
+            row = grandparent.index(parent_node)
+            return self.createIndex(row, 0, grandparent)
 
         return INVALID_INDEX
 
@@ -124,14 +149,14 @@ class TreeSourceModel(QAbstractItemModel):
         parent: QModelIndex | QPersistentModelIndex = INVALID_INDEX,
     ) -> QModelIndex:
         parent_node = self._get_node(parent)
-        if parent_node is None or row >= len(parent_node):
+        if parent_node is None:
             # this shouldn't happen in normal operation
             return INVALID_INDEX  # pragma: no cover
         else:
-            # We attach the node for the row to the index for speed.
-            # The node must remain alive during the lifetime of the QModelIndex()
-            node = parent_node[row]
-            return self.createIndex(row, column, node)
+            # We attach the node for the parent to the index for speed.
+            # The parent node must remain alive during the lifetime of the
+            # QModelIndex()
+            return self.createIndex(row, column, parent_node)
 
     def rowCount(
         self,
@@ -267,11 +292,17 @@ class Tree(Widget):
 
     # Listener Protocol implementation
 
+    def pre_insert(self, index, item, parent=None):
+        self.native_model.pre_insert_item(item=item, index=index, parent=parent)
+
     def insert(self, index, item, parent=None):
         self.native_model.insert_item(item=item, index=index, parent=parent)
 
     def change(self, item):
         self.native_model.item_changed(item)
+
+    def pre_remove(self, index, item, parent=None):
+        self.native_model.pre_remove_item(item=item, index=index, parent=parent)
 
     def remove(self, index, item, parent=None):
         self.native_model.remove_item(item=item, index=index, parent=parent)
@@ -284,8 +315,8 @@ class Tree(Widget):
         indexes = sorted(
             {
                 (
-                    tuple(reversed(self.native_model._get_rows(index))),
-                    index.internalPointer(),
+                    tuple(reversed(self.native_model._get_rows_from_index(index))),
+                    self.native_model._get_node(index),
                 )
                 for index in self.native.selectedIndexes()
             }

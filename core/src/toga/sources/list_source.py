@@ -142,8 +142,8 @@ class ListSource(Source):
     def __delitem__(self, index: int) -> None:
         """Deletes the item at position `index` of the list."""
         row = self._data[index]
-        del self._data[index]
-        self.notify("remove", index=index, item=row)
+        with self.pre_notify("remove", index=index, item=row):
+            del self._data[index]
 
     ######################################################################
     # Factory methods for new rows
@@ -189,8 +189,8 @@ class ListSource(Source):
         :returns: The newly constructed Row object.
         """
         row = self._create_row(data)
-        self._data.insert(index, row)
-        self.notify("insert", index=index, item=row)
+        with self.pre_notify("insert", index=index, item=row):
+            self._data.insert(index, row)
         return row
 
     def append(self, data: object) -> Row:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from typing import Generic, Protocol, TypeVar, runtime_checkable
 
 ListenerT = TypeVar("ListenerT")
@@ -25,8 +26,22 @@ class ListListener(ValueListener[ItemT], Protocol, Generic[ItemT]):
     list data source.
     """
 
+    def pre_insert(self, *, index: int, item: ItemT) -> None:
+        """An item is about to be added to the data source.
+
+        :param index: The 0-index position in the data.
+        :param item: The data object that was added.
+        """
+
     def insert(self, *, index: int, item: ItemT) -> None:
         """An item has been added to the data source.
+
+        :param index: The 0-index position in the data.
+        :param item: The data object that was added.
+        """
+
+    def pre_remove(self, *, index: int, item: ItemT) -> None:
+        """An item is about to be removed from the data source.
 
         :param index: The 0-index position in the data.
         :param item: The data object that was added.
@@ -49,12 +64,34 @@ class TreeListener(ListListener[ItemT], Protocol, Generic[ItemT]):
     tree data source.
     """
 
+    def pre_insert(
+        self, *, index: int, item: object, parent: ItemT | None = None
+    ) -> None:
+        """An item is about to be added to the data source.
+
+        :param index: The 0-index position in the data.
+        :param item: The data object that was added.
+        :param parent: The parent of the data object that was added, or `None`
+            if it is a root item.
+        """
+
     def insert(self, *, index: int, item: object, parent: ItemT | None = None) -> None:
         """An item has been added to the data source.
 
         :param index: The 0-index position in the data.
         :param item: The data object that was added.
         :param parent: The parent of the data object that was added, or `None`
+            if it is a root item.
+        """
+
+    def pre_remove(
+        self, *, index: int, item: object, parent: ItemT | None = None
+    ) -> None:
+        """An item is about to be removed from the data source.
+
+        :param index: The 0-index position in the data.
+        :param item: The data object that was added.
+        :param parent: The parent of the data object that was removed, or `None`
             if it is a root item.
         """
 
@@ -100,6 +137,27 @@ class Source(Generic[ListenerT]):
         :param listener: The listener to remove.
         """
         self._listeners.remove(listener)
+
+    @contextmanager
+    def pre_notify(self, notification, **kwargs: object):
+        """Context manager that sends a two-part notification.
+
+        This context manager sends a notification with prefix
+        "pre_" and the notification name when it enters the
+        context manager, and then sends the actual notification
+        when it is finished.
+
+        This permits listeners to do any book-keeping they might
+        need to do before the actual change occurs.
+
+        :param notification: The notification to emit.
+        :param kwargs: The data associated with the notification.
+        """
+        self.notify(f"pre_{notification}", **kwargs)
+        try:
+            yield
+        finally:
+            self.notify(notification, **kwargs)
 
     def notify(self, notification: str, **kwargs: object) -> None:
         """Notify all listeners an event has occurred.

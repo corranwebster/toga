@@ -538,7 +538,16 @@ async def _row_change_test(widget, probe):
     small_data = [
         (
             {"a": "A0", "b": "", "c": ""},
-            [({"a": f"A{i}", "b": i, "c": MyData(i)}, None) for i in range(5)],
+            [
+                (
+                    {"a": f"A{i}", "b": i, "c": MyData(i)},
+                    [
+                        ({"a": f"A{i}{j}", "b": j, "c": MyData(i)}, None)
+                        for j in range(i)
+                    ],
+                )
+                for i in range(5)
+            ],
         )
     ]
 
@@ -697,6 +706,22 @@ async def _row_change_test(widget, probe):
     # - nothing should be selected
     assert widget.selection is None
 
+    # Delete the child of a selected row
+    # - ensure row is visible
+    await probe.expand_tree()
+    await probe.redraw("Tree expanded")
+    # - select row
+    await probe.select_row((0, 2, 0))
+    await probe.redraw("Row has been selected")
+    assert widget.selection == widget.data[0][2][0]
+    # - delete parent row
+    del widget.data[0][2]
+    await probe.redraw("Row has been removed")
+    assert probe.child_count((0,)) == 4
+    probe.assert_cell_content((0, 2), 0, "A4")
+    # - nothing should be selected
+    assert widget.selection is None
+
     # Insert a row at selection
     # - ensure row is visible
     await probe.expand_tree()
@@ -708,9 +733,9 @@ async def _row_change_test(widget, probe):
     # - insert row, which is missing a B accessor
     widget.data[0].insert(2, {"a": "AY", "c": "CY"})
     await probe.redraw("Partial row has been appended")
-    assert probe.child_count((0,)) == 6
+    assert probe.child_count((0,)) == 5
     probe.assert_cell_content((0, 2), 0, "AY")
-    probe.assert_cell_content((0, 3), 0, "A3")
+    probe.assert_cell_content((0, 3), 0, "A4")
     # - check selection is original object or has been cleared
     assert widget.selection == widget.data[0][3] or widget.selection is None
 

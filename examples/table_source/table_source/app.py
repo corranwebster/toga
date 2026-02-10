@@ -1,3 +1,5 @@
+import bisect
+from operator import attrgetter
 from random import choice
 
 import toga
@@ -41,15 +43,14 @@ class MovieSource(Source):
 
     def add(self, entry):
         movie = Movie(*entry)
-        self._movies.append(movie)
-        self._movies.sort(key=lambda m: m.year)
-        self.notify("insert", index=self._movies.index(movie), item=movie)
+        index = bisect.bisect(self._movies, movie.year, key=attrgetter("year"))
+        with self.pre_notify("insert", index=index, item=movie):
+            self._movies.insert(index, movie)
 
     def remove(self, item):
         index = self.index(item)
-        self.notify("pre_remove", index=index, item=item)
-        del self._movies[index]
-        self.notify("remove", index=index, item=item)
+        with self.pre_notify("remove", index=index, item=item):
+            del self._movies[index]
 
     def clear(self):
         self._movies = []
@@ -66,9 +67,16 @@ class GoodMovieSource(Source):
         self._removals = {}
 
     # Implement the filtering of the underlying data source
+    def _filter(self, movie):
+        """Whether or not to include the movie."""
+        return movie.rating > 7.0
+
     def _filtered(self):
+        """Current sorted and filtered list."""
         return sorted(
-            (m for m in self._source._movies if m.rating > 7.0), key=lambda m: -m.rating
+            (m for m in self._source._movies if self._filter(m)),
+            key=attrgetter("rating"),
+            reverse=True,
         )
 
     # Methods required by the ListSource interface
@@ -81,34 +89,34 @@ class GoodMovieSource(Source):
     def index(self, entry):
         return self._filtered().index(entry)
 
-    # A listener that passes on all notifications, but only if they apply
-    # to the filtered data source
+    def _notify_if_present(self, notification, item, index=None):
+        if self._filter(item):
+            # If the item exists in the filtered list, propagate the notification
+            kwargs = {"item": item}
+            if index is not None:
+                # notification needs and index: where is it, or would it be,
+                # in the sorted list?
+                kwargs["index"] = bisect.bisect_left(
+                    self._filtered(),
+                    item.rating,
+                    key=attrgetter("rating"),
+                )
+            self.notify(notification, **kwargs)
+
+    def pre_insert(self, index, item):
+        self._notify_if_present("pre_insert", item=item, index=index)
+
     def insert(self, index, item):
-        # If the item exists in the filtered list, propagate the notification
-        for i, filtered_item in enumerate(self._filtered()):
-            if filtered_item == item:
-                # Propagate the insertion, with the position in the
-                # *filtered* list.
-                self.notify("insert", index=i, item=item)
+        self._notify_if_present("insert", item=item, index=index)
 
     def pre_remove(self, index, item):
-        # If the item exists in the filtered list, track that it is being
-        # removed; but don't propagate the removal notification until it has
-        # been removed from the base data source
-        for i, filtered_item in enumerate(self._filtered()):
-            if filtered_item == item:
-                # Track that the object *was* in the data source
-                self._removals[item] = i
+        self._notify_if_present("pre_remove", item=item, index=index)
 
     def remove(self, index, item):
-        # If the removed item previously existed in the filtered data source,
-        # propagate the removal notification.
-        try:
-            i = self._removals.pop(item)
-            self.notify("remove", index=i, item=item)
-        except KeyError:
-            # object wasn't previously in the data source
-            pass
+        self._notify_if_present("remove", item=item, index=index)
+
+    def change(self, item):
+        self._notify_if_present("change", item=item)
 
     def clear(self):
         self.notify("clear")

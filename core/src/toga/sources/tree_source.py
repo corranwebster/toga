@@ -66,13 +66,12 @@ class Node(Row[T]):
             raise ValueError(f"{self} is a leaf node")
 
         child = self._children[index]
-        del self._children[index]
+        with self._source.pre_notify("remove", parent=self, index=index, item=child):
+            del self._children[index]
 
-        # Child isn't part of this source, or a child of this node anymore.
-        child._parent = None
-        child._source = None
-
-        self._source.notify("remove", parent=self, index=index, item=child)
+            # Child isn't part of this source, or a child of this node anymore.
+            child._parent = None
+            child._source = None
 
     def __len__(self) -> int:
         if self.can_have_children():
@@ -132,8 +131,8 @@ class Node(Row[T]):
             index = min(len(self), index)
 
         node = self._source._create_node(parent=self, data=data, children=children)
-        self._children.insert(index, node)
-        self._source.notify("insert", parent=self, index=index, item=node)
+        with self._source.pre_notify("insert", parent=self, index=index, item=node):
+            self._children.insert(index, node)
         return node
 
     def append(self, data: object, children: object = None) -> Node[T]:
@@ -232,9 +231,9 @@ class TreeSource(Source):
 
     def __delitem__(self, index: int) -> None:
         node = self._roots[index]
-        del self._roots[index]
-        node._source = None
-        self.notify("remove", parent=None, index=index, item=node)
+        with self.pre_notify("remove", parent=None, index=index, item=node):
+            del self._roots[index]
+            node._source = None
 
     ######################################################################
     # Factory methods for new nodes
@@ -317,9 +316,9 @@ class TreeSource(Source):
             index = min(len(self), index)
 
         node = self._create_node(parent=None, data=data, children=children)
-        self._roots.insert(index, node)
-        node._parent = None
-        self.notify("insert", parent=None, index=index, item=node)
+        with self.pre_notify("insert", parent=None, index=index, item=node):
+            self._roots.insert(index, node)
+            node._parent = None
 
         return node
 
