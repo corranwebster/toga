@@ -104,7 +104,8 @@ class TreeSourceModel(QAbstractItemModel):
             else:
                 return self._source
             if len(parent) < index.row():
-                return None
+                # This should never happen in regular operation
+                return None  # pragma: no cover
             else:
                 return parent[index.row()]
         else:  # pragma: no cover
@@ -122,24 +123,24 @@ class TreeSourceModel(QAbstractItemModel):
     def parent(self, index: QModelIndex | QPersistentModelIndex) -> QModelIndex: ...
 
     def parent(self, index=None):
-        # handle QObject.parent()
+        # handle QObject.parent(), not tested
         if index is None:
-            return super().parent()
+            return super().parent()  # pragma: no cover
 
         # index should always be valid, but check anyway
-        if index.isValid():  # pragma: no branch
-            parent_node = index.internalPointer()
-            if parent_node is self._source:
-                return INVALID_INDEX
-            elif parent_node._parent is not None:
-                grandparent = parent_node._parent
-            else:
-                grandparent = self._source
+        if index.isValid():
+            return INVALID_INDEX  # pragma: no cover
 
-            row = grandparent.index(parent_node)
-            return self.createIndex(row, 0, grandparent)
+        parent_node = index.internalPointer()
+        if parent_node is self._source:
+            return INVALID_INDEX
+        elif parent_node._parent is not None:
+            grandparent = parent_node._parent
+        else:
+            grandparent = self._source
 
-        return INVALID_INDEX
+        row = grandparent.index(parent_node)
+        return self.createIndex(row, 0, grandparent)
 
     def index(
         self,
