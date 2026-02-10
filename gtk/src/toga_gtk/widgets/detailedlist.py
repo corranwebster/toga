@@ -250,6 +250,12 @@ class DetailedList(Widget):
         for item in source:
             self.store.append(self.row_factory(item))
 
+    def pre_insert(self, index, item):
+        pass
+
+    def pre_remove(self, index, item):
+        pass
+
     def insert(self, index, item):
         self.hide_actions()
         item_impl = self.row_factory(item)

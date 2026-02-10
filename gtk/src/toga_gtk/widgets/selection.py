@@ -59,6 +59,12 @@ class Selection(Widget):
         # Changing the item text can change the layout size
         self.interface.refresh()
 
+    def pre_insert(self, index, item):
+        pass
+
+    def pre_remove(self, index, item):
+        pass
+
     def insert(self, index, item):
         if GTK_VERSION < (4, 0, 0):  # pragma: no-cover-if-gtk4
             with self.suspend_notifications():

@@ -39,6 +39,12 @@ class Selection(Widget):
     def clear(self):
         self.native.clear()
 
+    def pre_insert(self, index, item):
+        pass
+
+    def pre_remove(self, index, item):
+        pass
+
     def insert(self, index, item):
         self._item_id_count += 1
         self.native.insertItem(

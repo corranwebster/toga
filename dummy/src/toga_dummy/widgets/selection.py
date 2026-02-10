@@ -6,6 +6,12 @@ class Selection(Widget):
         self._action("create Selection")
         self._items = []
 
+    def pre_insert(self, index, item):
+        self._action("pre insert item", index=index, item=item)
+
+    def pre_remove(self, index, item):
+        self._action("pre remove item", index=index, item=item)
+
     def insert(self, index, item):
         self._action("insert item", index=index, item=item)
         self._items.insert(index, item)

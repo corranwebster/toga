@@ -211,6 +211,12 @@ class DetailedList(Widget):
     def after_on_refresh(self, widget, result):
         self._refresh_layout.setRefreshing(False)
 
+    def pre_insert(self, index, item):
+        pass
+
+    def pre_remove(self, index, item):
+        pass
+
     def insert(self, index, item):
         self._load_data()
 

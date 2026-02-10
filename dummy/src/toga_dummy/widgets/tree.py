@@ -19,6 +19,12 @@ class Tree(Widget):
         self._action("change source", source=source)
         self.interface.on_select()
 
+    def pre_insert(self, index, item, parent=None):
+        self._action("pre insert item", index=index, item=item, parent=parent)
+
+    def pre_remove(self, index, item, parent=None):
+        self._action("pre remove item", index=index, item=item, parent=parent)
+
     def insert(self, index, item, parent=None):
         self._action("insert node", parent=parent, index=index, item=item)
 

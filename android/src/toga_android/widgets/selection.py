@@ -42,6 +42,12 @@ class Selection(ContainedWidget):
             self.interface.on_change()
             self.last_selection = index
 
+    def pre_insert(self, index, item):
+        pass
+
+    def pre_remove(self, index, item):
+        pass
+
     def insert(self, index, item):
         self.adapter.insert(self.interface._title_for_item(item), index)
         if self.last_selection is None:

@@ -93,6 +93,12 @@ class Tree(Widget):
         else:  # pragma: no-cover-if-gtk3
             pass
 
+    def pre_insert(self, index, item, parent=None):
+        pass
+
+    def pre_remove(self, index, item, parent=None):
+        pass
+
     def insert(self, index, item, parent=None):
         row = TogaRow(item)
         values = [row]

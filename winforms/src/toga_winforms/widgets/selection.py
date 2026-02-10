@@ -34,6 +34,12 @@ class Selection(Widget):
         self.native.Items.Clear()
         self.on_change()
 
+    def pre_insert(self, index, item):
+        pass
+
+    def pre_remove(self, index, item):
+        pass
+
     def insert(self, index, item):
         self.native.Items.Insert(index, self.interface._title_for_item(item))
 

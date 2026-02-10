@@ -42,6 +42,12 @@ class Selection(Widget):
     def set_background_color(self, color):
         pass
 
+    def pre_insert(self, index, item):
+        pass
+
+    def pre_remove(self, index, item):
+        pass
+
     def insert(self, index, item):
         # Issue 2319 - if item titles are not unique, macOS will move the existing item,
         # rather than creating a duplicate item. To work around this, create an item

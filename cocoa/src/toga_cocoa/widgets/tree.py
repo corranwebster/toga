@@ -191,6 +191,12 @@ class Tree(Widget):
     def change_source(self, source):
         self.native_tree.reloadData()
 
+    def pre_insert(self, index, item, parent=None):
+        pass
+
+    def pre_remove(self, index, item, parent=None):
+        pass
+
     def insert(self, index, item, parent=None):
         index_set = NSIndexSet.indexSetWithIndex(index)
         self.native_tree.insertItemsAtIndexes(

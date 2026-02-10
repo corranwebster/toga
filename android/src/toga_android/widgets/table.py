@@ -173,6 +173,12 @@ class Table(Widget):
         else:
             return selection[0]
 
+    def pre_insert(self, index, item):
+        pass
+
+    def pre_remove(self, index, item):
+        pass
+
     def insert(self, index, item):
         self.change_source(getattr(self.interface, "data", None))
 

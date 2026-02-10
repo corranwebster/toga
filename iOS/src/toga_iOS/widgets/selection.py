@@ -110,6 +110,12 @@ class Selection(Widget):
 
         self.select_item(0, default_item)
 
+    def pre_insert(self, index, item):
+        pass
+
+    def pre_remove(self, index, item):
+        pass
+
     def insert(self, index, item):
         if self._empty:
             # If you're inserting the first item, make sure it's selected
