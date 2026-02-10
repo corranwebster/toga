@@ -33,7 +33,7 @@ class ListListener(ValueListener[ItemT], Protocol, Generic[ItemT]):
         :param item: The data object that was added.
         """
 
-    def insert(self, *, index: int, item: ItemT) -> None:
+    def post_insert(self, *, index: int, item: ItemT) -> None:
         """An item has been added to the data source.
 
         :param index: The 0-index position in the data.
@@ -47,7 +47,7 @@ class ListListener(ValueListener[ItemT], Protocol, Generic[ItemT]):
         :param item: The data object that was added.
         """
 
-    def remove(self, *, index: int, item: ItemT) -> None:
+    def post_remove(self, *, index: int, item: ItemT) -> None:
         """An item has been removed from the data source.
 
         :param index: The 0-index position in the data.
@@ -75,7 +75,9 @@ class TreeListener(ListListener[ItemT], Protocol, Generic[ItemT]):
             if it is a root item.
         """
 
-    def insert(self, *, index: int, item: object, parent: ItemT | None = None) -> None:
+    def post_insert(
+        self, *, index: int, item: object, parent: ItemT | None = None
+    ) -> None:
         """An item has been added to the data source.
 
         :param index: The 0-index position in the data.
@@ -95,7 +97,9 @@ class TreeListener(ListListener[ItemT], Protocol, Generic[ItemT]):
             if it is a root item.
         """
 
-    def remove(self, *, index: int, item: object, parent: ItemT | None = None) -> None:
+    def post_remove(
+        self, *, index: int, item: object, parent: ItemT | None = None
+    ) -> None:
         """An item has been removed from the data source.
 
         :param index: The 0-index position in the data.
