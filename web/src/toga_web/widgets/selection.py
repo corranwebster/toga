@@ -17,6 +17,12 @@ class Selection(Widget):
         while self.native.firstElementChild:
             self.native.removeChild(self.native.firstElementChild)
 
+    def pre_insert(self, index, item):
+        pass
+
+    def pre_remove(self, index, item):
+        pass
+
     def insert(self, index, item):
         display_text = self.interface._title_for_item(item)
         option = self._create_native_widget("sl-option")

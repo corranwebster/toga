@@ -9,6 +9,12 @@ class DetailedList(Widget):
         self._action("change source", source=source)
         self.interface.on_select()
 
+    def pre_insert(self, index, item):
+        self._action("pre insert item", index=index, item=item)
+
+    def pre_remove(self, index, item):
+        self._action("pre remove item", index=index, item=item)
+
     def insert(self, index, item):
         self._action("insert item", index=index, item=item)
 
