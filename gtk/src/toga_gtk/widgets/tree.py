@@ -93,13 +93,7 @@ class Tree(Widget):
         else:  # pragma: no-cover-if-gtk3
             pass
 
-    def pre_insert(self, index, item, parent=None):
-        pass
-
-    def pre_remove(self, index, item, parent=None):
-        pass
-
-    def post_insert(self, index, item, parent=None):
+    def insert(self, index, item, parent=None):
         row = TogaRow(item)
         values = [row]
         for column in self.interface._columns:
@@ -128,7 +122,7 @@ class Tree(Widget):
             row[i * 2 + 2] = row[0].text(column, self.interface.missing_value)
             row[0].warn_widget(column)
 
-    def post_remove(self, index, item, parent=None):
+    def remove(self, index, item, parent=None):
         del self.store[item._impl]
         item._impl = None
 

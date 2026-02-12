@@ -26,11 +26,6 @@ def source():
     source._create_node.side_effect = lambda *args, **kwargs: _create_node(
         source, *args, **kwargs
     )
-    mock_pre_notify = Mock()
-    mock_pre_notify.__enter__ = Mock()
-    mock_pre_notify.__enter__.return_value = Mock()
-    mock_pre_notify.__exit__ = Mock()
-    source.pre_notify.return_value = mock_pre_notify
     return source
 
 
@@ -182,10 +177,8 @@ def test_modify_children(source, node):
     del node[1]
 
     # Removal notification was sent
-    source.pre_notify.assert_called_once_with(
-        "remove", parent=node, index=1, item=child
-    )
-    source.pre_notify.reset_mock()
+    source.notify.assert_called_once_with("remove", parent=node, index=1, item=child)
+    source.notify.reset_mock()
 
     # Child is no longer associated with the source
     assert child._parent is None
@@ -270,7 +263,7 @@ def test_insert(source, node, index, actual_index):
     )
 
     # insert notification was sent, the change is associated with the new item
-    source.pre_notify.assert_called_once_with(
+    source.notify.assert_called_once_with(
         "insert",
         parent=node,
         index=actual_index,
@@ -310,7 +303,7 @@ def test_insert_with_children(source, node):
     assert not new_child[0].can_have_children()
 
     # insert notification was sent, the change is associated with the new item
-    source.pre_notify.assert_called_once_with(
+    source.notify.assert_called_once_with(
         "insert",
         parent=node,
         index=1,
@@ -333,7 +326,7 @@ def test_insert_leaf(leaf_node, source):
     )
 
     # insert notification was sent, the change is associated with the new item
-    source.pre_notify.assert_called_once_with(
+    source.notify.assert_called_once_with(
         "insert", parent=leaf_node, index=0, item=leaf_node[0]
     )
 
@@ -352,7 +345,7 @@ def test_append(source, node):
     )
 
     # insert notification was sent, the change is associated with the new item
-    source.pre_notify.assert_called_once_with(
+    source.notify.assert_called_once_with(
         "insert",
         parent=node,
         index=2,
@@ -386,7 +379,7 @@ def test_append_with_children(source, node):
     )
 
     # insert notification was sent, the change is associated with the new item
-    source.pre_notify.assert_called_once_with(
+    source.notify.assert_called_once_with(
         "insert",
         parent=node,
         index=2,
@@ -409,7 +402,7 @@ def test_append_leaf(leaf_node, source):
     )
 
     # insert notification was sent, the change is associated with the new item
-    source.pre_notify.assert_called_once_with(
+    source.notify.assert_called_once_with(
         "insert", parent=leaf_node, index=0, item=leaf_node[0]
     )
 
@@ -453,9 +446,7 @@ def test_remove(source, node, child_b):
     assert len(node) == 1
 
     # The source was notified
-    source.pre_notify.assert_called_once_with(
-        "remove", parent=node, index=1, item=child_b
-    )
+    source.notify.assert_called_once_with("remove", parent=node, index=1, item=child_b)
 
 
 def test_remove_leaf(leaf_node, child_b):

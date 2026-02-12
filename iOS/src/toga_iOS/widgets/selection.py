@@ -110,13 +110,7 @@ class Selection(Widget):
 
         self.select_item(0, default_item)
 
-    def pre_insert(self, index, item):
-        pass
-
-    def pre_remove(self, index, item):
-        pass
-
-    def post_insert(self, index, item):
+    def insert(self, index, item):
         if self._empty:
             # If you're inserting the first item, make sure it's selected
             self.select_item(index, item)
@@ -144,7 +138,7 @@ class Selection(Widget):
         # Changing the item text can change the layout size
         self.interface.refresh()
 
-    def post_remove(self, index, item):
+    def remove(self, index, item):
         selection_change = self.native_picker.selectedRowInComponent(0) == index
 
         # Get rid of focus to force the user to re-open the selection

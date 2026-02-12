@@ -39,13 +39,7 @@ class Selection(Widget):
     def clear(self):
         self.native.clear()
 
-    def pre_insert(self, index, item):
-        pass
-
-    def pre_remove(self, index, item):
-        pass
-
-    def post_insert(self, index, item):
+    def insert(self, index, item):
         self._item_id_count += 1
         self.native.insertItem(
             index, self.interface._title_for_item(item), self._item_id_count
@@ -56,7 +50,7 @@ class Selection(Widget):
         self.native.setItemText(index, self.interface._title_for_item(item))
         self.interface.refresh()
 
-    def post_remove(self, index, item):
+    def remove(self, index, item):
         current_index = self.native.currentIndex()
         with self.suspend_notifications():
             self.native.removeItem(index)

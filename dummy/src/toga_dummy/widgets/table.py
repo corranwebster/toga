@@ -9,19 +9,13 @@ class Table(Widget):
         self._action("change source", source=source)
         self.interface.on_select()
 
-    def pre_insert(self, index, item):
-        self._action("pre insert item", index=index, item=item)
-
-    def pre_remove(self, index, item):
-        self._action("pre remove item", index=index, item=item)
-
-    def post_insert(self, index, item):
+    def insert(self, index, item):
         self._action("insert row", index=index, item=item)
 
     def change(self, item):
         self._action("change row", item=item)
 
-    def post_remove(self, index, item):
+    def remove(self, index, item):
         self._action("remove row", item=item, index=index)
 
     def clear(self):

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 from typing import Generic, Protocol, TypeVar, runtime_checkable
 
 ListenerT = TypeVar("ListenerT")
@@ -26,28 +25,14 @@ class ListListener(ValueListener[ItemT], Protocol, Generic[ItemT]):
     list data source.
     """
 
-    def pre_insert(self, *, index: int, item: ItemT) -> None:
-        """An item is about to be added to the data source.
-
-        :param index: The 0-index position in the data.
-        :param item: The data object that was added.
-        """
-
-    def post_insert(self, *, index: int, item: ItemT) -> None:
+    def insert(self, *, index: int, item: ItemT) -> None:
         """An item has been added to the data source.
 
         :param index: The 0-index position in the data.
         :param item: The data object that was added.
         """
 
-    def pre_remove(self, *, index: int, item: ItemT) -> None:
-        """An item is about to be removed from the data source.
-
-        :param index: The 0-index position in the data.
-        :param item: The data object that was added.
-        """
-
-    def post_remove(self, *, index: int, item: ItemT) -> None:
+    def remove(self, *, index: int, item: ItemT) -> None:
         """An item has been removed from the data source.
 
         :param index: The 0-index position in the data.
@@ -64,20 +49,7 @@ class TreeListener(ListListener[ItemT], Protocol, Generic[ItemT]):
     tree data source.
     """
 
-    def pre_insert(
-        self, *, index: int, item: object, parent: ItemT | None = None
-    ) -> None:
-        """An item is about to be added to the data source.
-
-        :param index: The 0-index position in the data.
-        :param item: The data object that was added.
-        :param parent: The parent of the data object that was added, or `None`
-            if it is a root item.
-        """
-
-    def post_insert(
-        self, *, index: int, item: object, parent: ItemT | None = None
-    ) -> None:
+    def insert(self, *, index: int, item: object, parent: ItemT | None = None) -> None:
         """An item has been added to the data source.
 
         :param index: The 0-index position in the data.
@@ -86,20 +58,7 @@ class TreeListener(ListListener[ItemT], Protocol, Generic[ItemT]):
             if it is a root item.
         """
 
-    def pre_remove(
-        self, *, index: int, item: object, parent: ItemT | None = None
-    ) -> None:
-        """An item is about to be removed from the data source.
-
-        :param index: The 0-index position in the data.
-        :param item: The data object that was added.
-        :param parent: The parent of the data object that was removed, or `None`
-            if it is a root item.
-        """
-
-    def post_remove(
-        self, *, index: int, item: object, parent: ItemT | None = None
-    ) -> None:
+    def remove(self, *, index: int, item: object, parent: ItemT | None = None) -> None:
         """An item has been removed from the data source.
 
         :param index: The 0-index position in the data.
@@ -142,27 +101,6 @@ class Source(Generic[ListenerT]):
         """
         self._listeners.remove(listener)
 
-    @contextmanager
-    def pre_notify(self, notification, **kwargs: object):
-        """Context manager that sends a two-part notification.
-
-        This context manager sends a notification with prefix
-        "pre_" and the notification name when it enters the
-        context manager, and then sends the actual notification
-        when it is finished.
-
-        This permits listeners to do any book-keeping they might
-        need to do before the actual change occurs.
-
-        :param notification: The notification to emit.
-        :param kwargs: The data associated with the notification.
-        """
-        self.notify(f"pre_{notification}", **kwargs)
-        try:
-            yield
-        finally:
-            self.notify(f"post_{notification}", **kwargs)
-
     def notify(self, notification: str, **kwargs: object) -> None:
         """Notify all listeners an event has occurred.
 
@@ -170,47 +108,13 @@ class Source(Generic[ListenerT]):
         :param kwargs: The data associated with the notification.
         """
         for listener in self._listeners:
-            if (method := getattr(listener, notification, None)) is not None:
+            try:
+                method = getattr(listener, notification)
+            except AttributeError:
+                method = None
+
+            if method:
                 method(**kwargs)
-            elif notification in {"post_insert", "post_remove"}:
-                # Handle backwards compatibility for listener:
-                # Feb 2026: In 0.5.3 and earlier, post_insert and post_remove
-                # were insert and remove
-
-                # try notification without the "post_"
-                notification = notification[5:]
-                if (method := getattr(listener, notification, None)) is not None:
-                    import warnings
-
-                    warnings.warn(
-                        f"Listener {listener!r} does not have 'post_{notification}' "
-                        f"method, using '{notification}' method instead. "
-                        f"Update the listener to use the 'post_{notification}' "
-                        "method.",
-                        DeprecationWarning,
-                        stacklevel=2,
-                    )
-                    method(**kwargs)
-            elif notification in {"insert", "remove"}:
-                # Handle backwards compatibility for source:
-                # Feb 2026: In 0.5.3 and earlier, post_insert and post_remove
-                # were insert and remove
-
-                # try notification with "post_"
-                if (
-                    method := getattr(listener, f"post_{notification}", None)
-                ) is not None:
-                    import warnings
-
-                    warnings.warn(
-                        f"Listener does not have '{notification}' method, "
-                        f"using 'post_{notification}' method instead. "
-                        f"Update {self!r} to generate 'post_{notification}' "
-                        "notifications.",
-                        DeprecationWarning,
-                        stacklevel=2,
-                    )
-                    method(**kwargs)
 
 
 def __getattr__(name):
@@ -218,7 +122,7 @@ def __getattr__(name):
         import warnings
 
         # Alias for backwards compatibility:
-        # Jan 2026: In 0.5.3 and earlier, ListListener was named Listener
+        # Jan 2025: In 0.5.3 and earlier, ListListener was named Listener
         global Listener
         Listener = ListListener
         warnings.warn(

@@ -173,13 +173,7 @@ class Table(Widget):
         else:
             return selection[0]
 
-    def pre_insert(self, index, item):
-        pass
-
-    def pre_remove(self, index, item):
-        pass
-
-    def post_insert(self, index, item):
+    def insert(self, index, item):
         self.change_source(getattr(self.interface, "data", None))
 
     def clear(self):
@@ -188,7 +182,7 @@ class Table(Widget):
     def change(self, item):
         self.change_source(getattr(self.interface, "data", None))
 
-    def post_remove(self, index, item):
+    def remove(self, index, item):
         self.change_source(getattr(self.interface, "data", None))
 
     def scroll_to_row(self, index):

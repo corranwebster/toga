@@ -190,19 +190,13 @@ class Table(Widget):
 
     # Listener Protocol implementation
 
-    def pre_insert(self, index, item):
-        pass
-
-    def pre_remove(self, index, item):
-        pass
-
-    def post_insert(self, index, item):
+    def insert(self, index, item):
         self.native_model.insert_item(index)
 
     def change(self, item):
         self.native_model.item_changed(item)
 
-    def post_remove(self, index, item):
+    def remove(self, index, item):
         self.native_model.remove_item(index)
 
     def clear(self):

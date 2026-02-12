@@ -59,13 +59,7 @@ class Selection(Widget):
         # Changing the item text can change the layout size
         self.interface.refresh()
 
-    def pre_insert(self, index, item):
-        pass
-
-    def pre_remove(self, index, item):
-        pass
-
-    def post_insert(self, index, item):
+    def insert(self, index, item):
         if GTK_VERSION < (4, 0, 0):  # pragma: no-cover-if-gtk4
             with self.suspend_notifications():
                 self.native.insert_text(index, self.interface._title_for_item(item))
@@ -76,7 +70,7 @@ class Selection(Widget):
         else:  # pragma: no-cover-if-gtk3
             pass
 
-    def post_remove(self, index, item):
+    def remove(self, index, item):
         selection = self.native.get_active()
         with self.suspend_notifications():
             self.native.remove(index)

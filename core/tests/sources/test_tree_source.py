@@ -389,8 +389,7 @@ def test_modify_roots(source, listener):
     del source[1]
 
     # Removal notification was sent
-    listener.pre_remove.assert_called_once_with(parent=None, index=1, item=root)
-    listener.post_remove.assert_called_once_with(parent=None, index=1, item=root)
+    listener.remove.assert_called_once_with(parent=None, index=1, item=root)
     listener.reset_mock()
 
     # Root is no longer associated with the source
@@ -455,12 +454,7 @@ def test_insert(source, listener, index, actual_index):
     assert source[actual_index].val1 == "new"
 
     # Insert notification was sent, the change is associated with the new item
-    listener.pre_insert.assert_called_once_with(
-        parent=None,
-        index=actual_index,
-        item=new_child,
-    )
-    listener.post_insert.assert_called_once_with(
+    listener.insert.assert_called_once_with(
         parent=None,
         index=actual_index,
         item=new_child,
@@ -493,12 +487,7 @@ def test_insert_with_children(source, listener):
     assert not source[1][1].can_have_children()
 
     # Insert notification was sent, the change is associated with the new item
-    listener.pre_insert.assert_called_once_with(
-        parent=None,
-        index=1,
-        item=new_child,
-    )
-    listener.post_insert.assert_called_once_with(
+    listener.insert.assert_called_once_with(
         parent=None,
         index=1,
         item=new_child,
@@ -517,12 +506,7 @@ def test_append(source, listener):
     assert source[2].val1 == "new"
 
     # Insert notification was sent, the change is associated with the new item
-    listener.pre_insert.assert_called_once_with(
-        parent=None,
-        index=2,
-        item=new_child,
-    )
-    listener.post_insert.assert_called_once_with(
+    listener.insert.assert_called_once_with(
         parent=None,
         index=2,
         item=new_child,
@@ -554,12 +538,7 @@ def test_append_with_children(source, listener):
     assert not source[2][1].can_have_children()
 
     # Insert notification was sent, the change is associated with the new item
-    listener.pre_insert.assert_called_once_with(
-        parent=None,
-        index=2,
-        item=new_child,
-    )
-    listener.post_insert.assert_called_once_with(
+    listener.insert.assert_called_once_with(
         parent=None,
         index=2,
         item=new_child,
@@ -578,8 +557,7 @@ def test_remove_root(source, listener):
     assert root._source is None
 
     # Removal notification was sent
-    listener.pre_remove.assert_called_once_with(parent=None, index=1, item=root)
-    listener.post_remove.assert_called_once_with(parent=None, index=1, item=root)
+    listener.remove.assert_called_once_with(parent=None, index=1, item=root)
 
 
 def test_remove_child(source, listener):
@@ -598,8 +576,7 @@ def test_remove_child(source, listener):
     assert node._parent is None
 
     # Removal notification was sent
-    listener.pre_remove.assert_called_once_with(parent=source[1], index=1, item=node)
-    listener.post_remove.assert_called_once_with(parent=source[1], index=1, item=node)
+    listener.remove.assert_called_once_with(parent=source[1], index=1, item=node)
 
 
 def test_remove_non_root(source, listener):
