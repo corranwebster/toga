@@ -6,6 +6,7 @@ try:
     from .command import Command
     from .container import Container
     from .fonts import Font
+    from .hardware.location import Location
     from .icons import Icon
     from .images import Image
     from .libs import get_testing
@@ -66,6 +67,7 @@ __all__ = [
     "Container",
     "Box",
     "Label",
+    "Location",
     "MapView",
     "MultilineTextInput",
     "NumberInput",
