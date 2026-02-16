@@ -19,6 +19,12 @@ from .properties import (  # noqa: F401
     test_font,
 )
 
+# flag for collapse/expand preservation when changing tree structure
+COLLAPSE_ON_INSERT_DELETE = "collapse_on_insert_delete"
+
+# flag for selection preservation when changing tree structure
+SELECTION_CLEARED_ON_INSERT_DELETE = "selection_cleared_on_insert_delete"
+
 
 @pytest.fixture
 def verify_font_sizes():
@@ -696,6 +702,11 @@ async def _row_change_test(widget, probe):
     probe.assert_cell_content((0, 2), 0, "A3")
     # - nothing should be selected
     assert widget.selection is None
+    # - parent should still be expanded
+    if not getattr(probe, COLLAPSE_ON_INSERT_DELETE, False):
+        assert probe.is_expanded(widget.data[0])
+    else:
+        assert not probe.is_expanded(widget.data[0])
 
     # Insert a row at selection
     # - ensure row is visible
@@ -712,7 +723,15 @@ async def _row_change_test(widget, probe):
     probe.assert_cell_content((0, 2), 0, "AY")
     probe.assert_cell_content((0, 3), 0, "A3")
     # - check selection is original object or has been cleared
-    assert widget.selection == widget.data[0][3] or widget.selection is None
+    if not getattr(probe, SELECTION_CLEARED_ON_INSERT_DELETE, False):
+        assert widget.selection == widget.data[0][3]
+    else:
+        assert widget.selection is None
+    # - parent should still be expanded
+    if not getattr(probe, COLLAPSE_ON_INSERT_DELETE, False):
+        assert probe.is_expanded(widget.data[0])
+    else:
+        assert not probe.is_expanded(widget.data[0])
 
     # Insert a new root
     widget.data.insert(0, {"a": "A!", "b": "B!", "c": "C!"})

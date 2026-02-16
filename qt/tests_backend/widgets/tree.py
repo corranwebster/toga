@@ -18,6 +18,8 @@ class TreeProbe(SimpleProbe):
     native_class = QTreeView
     supports_keyboard_shortcuts = False
     supports_widgets = False
+    selection_cleared_on_insert_delete = True
+    collapse_on_insert_delete = True
 
     def __init__(self, widget):
         super().__init__(widget)
