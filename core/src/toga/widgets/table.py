@@ -54,7 +54,7 @@ class Table(Widget, Generic[Value]):
 
         :param columns: The column objects or heading strings for the table.
             Column objects must implement the ['ColumnT'][toga.sources.columns.ColumnT]
-            protocol.  heading strings will be converted to
+            protocol. Heading strings will be converted to
             ['AccessorColumn'][toga.sources.columns.AccessorColumn] instances
             automatically. Heading strings can only contain one line; any text after a
             newline will be ignored.
@@ -66,18 +66,29 @@ class Table(Widget, Generic[Value]):
         :param style: A style object. If no style is provided, a default style will be
             applied to the widget.
         :param data: Initial [`data`][toga.Table.data] to be displayed in the table.
+            This can be an object which implements the `ListSourceT` protocol, an
+            Iterable object, or None.  An Iterable object will be automatically
+            converted to a [`ListSource`][toga.sources.ListSource].
 
-        :param accessors: Defines the attributes of the data source that will be used to
-            populate each column. Must be either:
+        :param accessors: When the data is provided as an iterable, the `ListSource`
+            created by the Table will try to derive its accessors from the Columns.
+            However in some cases this may need to be overridden, for example if there
+            should be more accessors than columns, or when the attribute for a column
+            given as a heading string doesn't match the string.
 
-            * `None` to derive accessors from the headings, as described above; or
+            The `accessors` argument must be either:
 
-            * A list of the same size as `headings`, specifying the accessors for each
-              heading. A value of [`None`][] will fall back to the default generated
-              accessor; or
+            * `None` to derive all accessors from the columns; or
 
-            * A dictionary mapping headings to accessors. Any missing headings will fall
-              back to the default generated accessor.
+            * A list at least as long as `columns`, specifying the accessors for each
+              column and any additional accessors needed.  When the column is given by
+              a heading string then the heading and accessor will be used to create an
+              [`AccessorColumn`][toga.sources.columns.AccessorColumn]; or
+
+            * A dictionary mapping heading strings to accessors. When the column is
+              given by a heading string then the heading and accessor will be used to
+              create an [`AccessorColumn`][toga.sources.columns.AccessorColumn].  Any
+              missing headings will fall back to the default generated accessor.
 
             If no columns or heading strings were provided, an
             ['AccessorColumn'][toga.sources.columns.AccessorColumn] instance will be
@@ -102,26 +113,37 @@ class Table(Widget, Generic[Value]):
         self._data: ListSourceT | ListSource
         self._data_accessor_order: list[str]
 
-        self._missing_value = missing_value or ""
+        self._missing_value = missing_value if missing_value else ""
         self._show_headings = show_headings
         self._multiple_select = multiple_select
 
-        # Jan 2026: backwards compatibility with API before columns
+        ######################################################################
+        # 2026-02: Backwards compatibility for <= 0.5.3
+        ######################################################################
         if headings is not None:
-            warnings.warn(
-                "The 'headings' keyword argument is deprecated, use 'columns' instead.",
-                DeprecationWarning,
-                stacklevel=-2,
-            )
+            if columns is None:
+                warnings.warn(
+                    "The 'headings' keyword argument is deprecated, "
+                    "use 'columns' instead.",
+                    DeprecationWarning,
+                    stacklevel=-2,
+                )
+                columns = headings
+            else:
+                raise TypeError("Can't specify columns and headings at the same time.")
+        ######################################################################
+        # End backwards compatibility
+        ######################################################################
+
         if columns is None:
-            if headings is None and accessors is None:
+            if accessors is None:
                 raise ValueError(
                     "Cannot create a table without either columns or accessors."
                 )
             columns = AccessorColumn.columns_from_headings_and_accessors(
-                headings, accessors
+                None, accessors
             )
-            self._show_headings = headings is not None
+            self._show_headings = False
         elif isinstance(accessors, Mapping):
             columns = [
                 AccessorColumn(column, accessors.get(column, None))
@@ -148,6 +170,8 @@ class Table(Widget, Generic[Value]):
             self._data_accessor_order = [
                 accessor for accessor in self.accessors if accessor is not None
             ]
+        elif isinstance(accessors, Mapping):
+            self._data_accessor_order = list(accessors.values())
         else:
             self._data_accessor_order = list(accessors)
 
@@ -281,11 +305,14 @@ class Table(Widget, Generic[Value]):
     ) -> None:
         """Append a column to the end of the table.
 
-        :param heading: The heading for the new column.
-        :param accessor: The accessor to use on the data source when populating
-            the table. If not specified, an accessor will be derived from the
-            heading.
+        :param column: The new column, or a heading string for the new column.
+        :param accessor: An accessor to use if a heading string is supplied rather
+            than a column object. If not specified, an accessor will be derived from
+            the heading. An accessor *must* be specified if the column is None.
         """
+        ######################################################################
+        # 2026-02: Backwards compatibility for <= 0.5.3
+        ######################################################################
         if column is None and heading is not None:
             column = heading
             warnings.warn(
@@ -293,6 +320,9 @@ class Table(Widget, Generic[Value]):
                 DeprecationWarning,
                 stacklevel=-2,
             )
+        ######################################################################
+        # End backwards compatibility
+        ######################################################################
         self.insert_column(len(self._columns), column, accessor=accessor)
 
     def insert_column(
@@ -312,7 +342,9 @@ class Table(Widget, Generic[Value]):
             than a column object. If not specified, an accessor will be derived from
             the heading. An accessor *must* be specified if the column is None.
         """
-        # Jan 2026: backwards compatibility
+        ######################################################################
+        # 2026-02: Backwards compatibility for <= 0.5.3
+        ######################################################################
         if column is None and heading is not None:
             column = heading
             warnings.warn(
@@ -320,6 +352,9 @@ class Table(Widget, Generic[Value]):
                 DeprecationWarning,
                 stacklevel=-2,
             )
+        ######################################################################
+        # End backwards compatibility
+        ######################################################################
         if column is None and accessor is None:
             raise ValueError("Must specify either a column or an accessor.")
         elif isinstance(column, str) and not self._show_headings and accessor is None:
@@ -350,9 +385,24 @@ class Table(Widget, Generic[Value]):
                 index = min(len(self._columns), index)
 
         self._columns.insert(index, column)
-        self._impl.insert_column(
-            index, column.heading, getattr(column, "accessor", None)
-        )
+        try:
+            self._impl.insert_column(index, column)
+        except TypeError:
+            ######################################################################
+            # 2026-02: Backwards compatibility for <= 0.5.3
+            ######################################################################
+            warnings.warn(
+                "Table implementations of insert_column should expect a column object "
+                "not heading and accessor.",
+                DeprecationWarning,
+                stacklevel=-2,
+            )
+            self._impl.insert_column(
+                index, column.heading, getattr(column, "accessor", None)
+            )
+            ######################################################################
+            # End backwards compatibility
+            ######################################################################
 
     def remove_column(self, column: int | ColumnT[Value] | str) -> None:
         """Remove a table column.
@@ -361,14 +411,19 @@ class Table(Widget, Generic[Value]):
             accessor [Deprecated]) to remove.
         """
         if isinstance(column, str):
-            # Column is a string; use as-is
-            index = self.accessors.index(column)
+            ######################################################################
+            # 2026-02: Backwards compatibility for <= 0.5.3
+            ######################################################################
             warnings.warn(
                 "Using accessors for a removal index is deprecated. "
-                "Use a column instead.",
+                "Use an integer index or Column object instead.",
                 DeprecationWarning,
                 stacklevel=-2,
             )
+            index = self.accessors.index(column)
+            ######################################################################
+            # End backwards compatibility
+            ######################################################################
         elif not isinstance(column, int):
             index = self._columns.index(column)
         else:

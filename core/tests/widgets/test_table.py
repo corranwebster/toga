@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -37,8 +37,10 @@ def source():
 @pytest.fixture
 def table(source, on_select_handler, on_activate_handler):
     return toga.Table(
-        ["Title", "Value"],
-        accessors=["key", "value"],
+        [
+            AccessorColumn("Title", "key"),
+            AccessorColumn("Value", "value"),
+        ],
         data=source,
         on_select=on_select_handler,
         on_activate=on_activate_handler,
@@ -195,7 +197,7 @@ def test_create_no_columns():
     ]
 
 
-def test_create_headings_required():
+def test_create_columns_required():
     """A Table requires either columns or accessors."""
     with pytest.raises(
         ValueError,
@@ -407,8 +409,7 @@ def test_insert_column_object_by_index(table):
         table,
         "insert column",
         index=1,
-        heading="New Column",
-        accessor="extra",
+        column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "New Column", "Value"]
     assert table.accessors == ["key", "extra", "value"]
@@ -419,7 +420,7 @@ def test_insert_column_object_by_index(table):
     ]
 
 
-def test_insert_column__heading_by_accessor(table):
+def test_insert_column_heading_by_accessor(table):
     """A column heading being inserted at an accessor is deprecated."""
     with pytest.warns(
         DeprecationWarning,
@@ -428,15 +429,14 @@ def test_insert_column__heading_by_accessor(table):
             "Use a column instead."
         ),
     ):
-        table.insert_column("value", "New Column", accessor="extra")
+        table.insert_column("value", AccessorColumn("New Column", "extra"))
 
     # The column was added
     assert_action_performed_with(
         table,
         "insert column",
         index=1,
-        heading="New Column",
-        accessor="extra",
+        column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "New Column", "Value"]
     assert table.accessors == ["key", "extra", "value"]
@@ -450,7 +450,7 @@ def test_insert_column__heading_by_accessor(table):
 def test_insert_column_unknown_accessor(table):
     """If the insertion index accessor is unknown, an error is raised."""
     with pytest.raises(ValueError, match=r"not in list"):
-        table.insert_column("unknown", "New Column", accessor="extra")
+        table.insert_column("unknown", AccessorColumn("New Column", "extra"))
 
 
 def test_insert_column_heading_column_object_index(table):
@@ -464,8 +464,7 @@ def test_insert_column_heading_column_object_index(table):
         table,
         "insert column",
         index=1,
-        heading="New Column",
-        accessor="extra",
+        column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "New Column", "Value"]
     assert table.accessors == ["key", "extra", "value"]
@@ -480,7 +479,7 @@ def test_insert_column_object_index_unknown_column(table):
     """If the insertion index accessor is unknown, an error is raised."""
     index_column = AccessorColumn("Unknown", "missing")
     with pytest.raises(ValueError, match=r"not in list"):
-        table.insert_column(index_column, "New Column", accessor="extra")
+        table.insert_column(index_column, AccessorColumn("New Column", "extra"))
 
 
 def test_insert_column_heading_by_index(table):
@@ -493,8 +492,7 @@ def test_insert_column_heading_by_index(table):
         table,
         "insert column",
         index=1,
-        heading="New Column",
-        accessor="extra",
+        column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "New Column", "Value"]
     assert table.accessors == ["key", "extra", "value"]
@@ -508,15 +506,14 @@ def test_insert_column_heading_by_index(table):
 def test_insert_column_big_index(table):
     """A column can be inserted at an index bigger than the number of columns."""
 
-    table.insert_column(100, "New Column", accessor="extra")
+    table.insert_column(100, AccessorColumn("New Column", "extra"))
 
     # The column was added
     assert_action_performed_with(
         table,
         "insert column",
         index=2,
-        heading="New Column",
-        accessor="extra",
+        column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "Value", "New Column"]
     assert table.accessors == ["key", "value", "extra"]
@@ -530,15 +527,14 @@ def test_insert_column_big_index(table):
 def test_insert_column_negative_index(table):
     """A column can be inserted at a negative index."""
 
-    table.insert_column(-2, "New Column", accessor="extra")
+    table.insert_column(-2, AccessorColumn("New Column", "extra"))
 
     # The column was added
     assert_action_performed_with(
         table,
         "insert column",
         index=0,
-        heading="New Column",
-        accessor="extra",
+        column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["New Column", "Title", "Value"]
     assert table.accessors == ["extra", "key", "value"]
@@ -553,15 +549,14 @@ def test_insert_column_big_negative_index(table):
     """A column can be inserted at a negative index larger than the number of
     columns."""
 
-    table.insert_column(-100, "New Column", accessor="extra")
+    table.insert_column(-100, AccessorColumn("New Column", "extra"))
 
     # The column was added
     assert_action_performed_with(
         table,
         "insert column",
         index=0,
-        heading="New Column",
-        accessor="extra",
+        column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["New Column", "Title", "Value"]
     assert table.accessors == ["extra", "key", "value"]
@@ -582,8 +577,7 @@ def test_insert_column_no_accessor(table):
         table,
         "insert column",
         index=1,
-        heading="New Column",
-        accessor="new_column",
+        column=AccessorColumn("New Column", "new_column"),
     )
     assert table.headings == ["Title", "New Column", "Value"]
     assert table.accessors == ["key", "new_column", "value"]
@@ -598,15 +592,14 @@ def test_insert_column_no_headings(source):
     """A column can be inserted into a table with no headings."""
     table = toga.Table(columns=None, accessors=["key", "value"], data=source)
 
-    table.insert_column(1, "New Column", accessor="extra")
+    table.insert_column(1, AccessorColumn("New Column", "extra"))
 
     # The column was added
     assert_action_performed_with(
         table,
         "insert column",
         index=1,
-        heading="New Column",
-        accessor="extra",
+        column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings is None
     assert table.accessors == ["key", "extra", "value"]
@@ -628,6 +621,39 @@ def test_insert_column_no_headings_missing_accessor(source):
         table.insert_column(1, "New Column")
 
 
+def test_insert_column_deprecated_implementation(table):
+    """The old insert_column implementation API is deprecated."""
+
+    def insert_column(self, index, heading, accessor):
+        self._action("insert column", index=index, heading=heading, accessor=accessor)
+
+    with patch.object(table._impl.__class__, "insert_column", insert_column):
+        with pytest.warns(
+            DeprecationWarning,
+            match=(
+                "Table implementations of insert_column should expect a column object "
+                "not heading and accessor."
+            ),
+        ):
+            table.insert_column(1, AccessorColumn("New Column", "extra"))
+
+    # The column was added
+    assert_action_performed_with(
+        table,
+        "insert column",
+        index=1,
+        heading="New Column",
+        accessor="extra",
+    )
+    assert table.headings == ["Title", "New Column", "Value"]
+    assert table.accessors == ["key", "extra", "value"]
+    assert table.columns == [
+        AccessorColumn("Title", "key"),
+        AccessorColumn("New Column", "extra"),
+        AccessorColumn("Value", "value"),
+    ]
+
+
 def test_append_column_object(table):
     """A column can be appended."""
     table.append_column(AccessorColumn("New Column", "extra"))
@@ -637,8 +663,7 @@ def test_append_column_object(table):
         table,
         "insert column",
         index=2,
-        heading="New Column",
-        accessor="extra",
+        column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "Value", "New Column"]
     assert table.accessors == ["key", "value", "extra"]
@@ -658,8 +683,7 @@ def test_append_column_str(table):
         table,
         "insert column",
         index=2,
-        heading="New Column",
-        accessor="extra",
+        column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "Value", "New Column"]
     assert table.accessors == ["key", "value", "extra"]
@@ -672,15 +696,18 @@ def test_append_column_str(table):
 
 def test_append_heading_deprecated(table):
     """Appending a column via heading keyword is deprecated."""
-    table.append_column(heading="New Column", accessor="extra")
+    with pytest.warns(
+        DeprecationWarning,
+        match="The 'heading' keyword argument is deprecated, use 'column' instead.",
+    ):
+        table.append_column(heading="New Column", accessor="extra")
 
     # The column was added
     assert_action_performed_with(
         table,
         "insert column",
         index=2,
-        heading="New Column",
-        accessor="extra",
+        column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "Value", "New Column"]
     assert table.accessors == ["key", "value", "extra"]
@@ -715,7 +742,8 @@ def test_remove_column_accessor(table):
     with pytest.warns(
         DeprecationWarning,
         match=(
-            "Using accessors for a removal index is deprecated. Use a column instead."
+            r"Using accessors for a removal index is deprecated\. Use an integer "
+            r"index or Column object instead\."
         ),
     ):
         table.remove_column("value")
@@ -735,8 +763,16 @@ def test_remove_column_accessor(table):
 
 def test_remove_column_unknown_accessor(table):
     """If the column named for removal doesn't exist, an error is raised."""
-    with pytest.raises(ValueError, match=r"not in list"):
-        table.remove_column("unknown")
+
+    with pytest.warns(
+        DeprecationWarning,
+        match=(
+            r"Using accessors for a removal index is deprecated\. Use an integer "
+            r"index or Column object instead\."
+        ),
+    ):
+        with pytest.raises(ValueError, match=r"not in list"):
+            table.remove_column("unknown")
 
 
 def test_remove_column_invalid_index(table):

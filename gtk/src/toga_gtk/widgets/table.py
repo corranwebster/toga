@@ -160,7 +160,7 @@ class Table(Widget):
         pos = row / n_rows * self.native.get_vadjustment().get_upper()
         self.native.get_vadjustment().set_value(pos)
 
-    def insert_column(self, index, heading, accessor):
+    def insert_column(self, index, column):
         # Adding/removing a column means completely rebuilding the ListStore
         self.change_source(self.interface.data)
 

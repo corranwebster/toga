@@ -194,7 +194,7 @@ class Table(Widget):
             True,  # Immediate, not animated
         )
 
-    def insert_column(self, index, heading, accessor):
+    def insert_column(self, index, column):
         self.change_source(getattr(self.interface, "data", None))
 
     def remove_column(self, index):

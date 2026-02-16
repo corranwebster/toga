@@ -35,20 +35,6 @@ class NameColumn(Column):
 ```
 
 
-For example, to get the value from a row of a Pandas `DataFrame` you could use something like the following:
-
-```python
-class PandasColumn(AccessorColumn):
-
-    def value(self, row):
-        try:
-            return row.loc[self.accessor]
-        except KeyError:
-            return None
-```
-
-
-
 ## Reference
 
 ::: toga.sources.columns.ColumnT
