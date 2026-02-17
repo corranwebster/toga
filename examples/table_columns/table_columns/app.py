@@ -10,8 +10,8 @@ from operator import itemgetter
 from babel.dates import format_date, format_time
 
 import toga
+from toga.constants import COLUMN
 from toga.sources import AccessorColumn, Column
-from toga.style.pack import COLUMN
 
 
 class TitleIconColumn(Column):
