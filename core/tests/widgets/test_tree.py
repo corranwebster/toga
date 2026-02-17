@@ -3,8 +3,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 import toga
-from toga.sources import TreeSource
-from toga.sources.columns import AccessorColumn
+from toga.sources import AccessorColumn, TreeSource
 from toga_dummy.utils import (
     assert_action_performed,
     assert_action_performed_with,

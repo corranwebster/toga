@@ -10,7 +10,7 @@ from operator import itemgetter
 from babel.dates import format_date, format_time
 
 import toga
-from toga.sources.columns import AccessorColumn, Column
+from toga.sources import AccessorColumn, Column
 from toga.style.pack import COLUMN
 
 

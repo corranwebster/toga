@@ -44,7 +44,7 @@ row = table.data[0]
 print(f"{row.name}, who is age {row.age}, is from {row.planet}")
 ```
 
-The string for the headings are translated into [`AccessorColumn`][toga.sources.columns.AccessorColumn] objects which tell the `Table` how to get the values to display in the column by looking up attributes on the rows.
+The string for the headings are translated into [`AccessorColumn`][toga.sources.AccessorColumn] objects which tell the `Table` how to get the values to display in the column by looking up attributes on the rows.
 
 -8<- "snippets/accessors.md"
 

@@ -289,7 +289,7 @@ Data representation:
     display: hide
 
   Column:
-    description: Base abstraction of tabular columns.
+    description: Abstractions of tabular columns.
     display: hide
 
   Types:

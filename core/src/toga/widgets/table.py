@@ -6,8 +6,7 @@ from typing import Any, Generic, Literal, Protocol, TypeVar
 
 import toga
 from toga.handlers import wrapped_handler
-from toga.sources import ListSource, ListSourceT, Row, Source
-from toga.sources.columns import AccessorColumn, ColumnT
+from toga.sources import AccessorColumn, ColumnT, ListSource, ListSourceT, Row, Source
 
 from .base import StyleT, Widget
 
@@ -53,9 +52,9 @@ class Table(Widget, Generic[Value]):
         """Create a new Table widget.
 
         :param columns: The column objects or heading strings for the table.
-            Column objects must implement the ['ColumnT'][toga.sources.columns.ColumnT]
+            Column objects must implement the ['ColumnT'][toga.sources.ColumnT]
             protocol. Heading strings will be converted to
-            ['AccessorColumn'][toga.sources.columns.AccessorColumn] instances
+            ['AccessorColumn'][toga.sources.AccessorColumn] instances
             automatically. Heading strings can only contain one line; any text after a
             newline will be ignored.
 
@@ -83,15 +82,15 @@ class Table(Widget, Generic[Value]):
             * A list at least as long as `columns`, specifying the accessors for each
               column and any additional accessors needed.  When the column is given by
               a heading string then the heading and accessor will be used to create an
-              [`AccessorColumn`][toga.sources.columns.AccessorColumn]; or
+              [`AccessorColumn`][toga.sources.AccessorColumn]; or
 
             * A dictionary mapping heading strings to accessors. When the column is
               given by a heading string then the heading and accessor will be used to
-              create an [`AccessorColumn`][toga.sources.columns.AccessorColumn].  Any
+              create an [`AccessorColumn`][toga.sources.AccessorColumn].  Any
               missing headings will fall back to the default generated accessor.
 
             If no columns or heading strings were provided, an
-            ['AccessorColumn'][toga.sources.columns.AccessorColumn] instance will be
+            ['AccessorColumn'][toga.sources.AccessorColumn] instance will be
             created for each accessor and a table with no headings will be created.
 
             The accessors are also passed to any `ListSources` created by the Table to

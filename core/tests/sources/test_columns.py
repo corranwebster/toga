@@ -1,7 +1,7 @@
 import pytest
 
 from toga.icons import Icon
-from toga.sources.columns import AccessorColumn, Column
+from toga.sources import AccessorColumn, Column
 from toga.sources.list_source import Row
 from toga.widgets.label import Label
 

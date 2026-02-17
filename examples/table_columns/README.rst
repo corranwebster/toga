@@ -1,4 +1,4 @@
-# Table COlumns
+# Table Columns
 
 Test app for the
 [Table widget](https://toga.beeware.org/en/stable/reference/api/widgets/table.html)
