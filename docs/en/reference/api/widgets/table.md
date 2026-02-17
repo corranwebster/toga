@@ -100,8 +100,7 @@ You can define your own custom columns which can do things like formatting text 
 
 - Widgets in cells is a beta API which may change in future, and is currently only supported on macOS.
 - macOS does not support changing the font used to render table content.
-- On Winforms, icons are only supported in the first column. On Android, icons are not supported at all.
-- The Android implementation is [not scalable](https://github.com/beeware/toga/issues/1392) beyond about 1,000 cells.
+- Icons in tables are not supported on Android, and the implementation is [not scalable](https://github.com/beeware/toga/issues/1392) beyond about 1,000 cells.
 
 ## Reference
 
