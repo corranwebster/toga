@@ -314,9 +314,9 @@ class Tree(Widget):
         self.interface.intrinsic.height = at_least(self.interface._MIN_HEIGHT)
         self.native.header().resizeSections(QHeaderView.ResizeMode.Stretch)
 
-    def insert_column(self, index, heading, accessor):
+    def insert_column(self, index, column):
         self.native_model.beginInsertColumns(QModelIndex(), index, index)
-        self.native_model._columns.insert(index, self.interface._columns[index])
+        self.native_model._columns.insert(index, column)
         self.native_model.endInsertColumns()
         self.native.header().resizeSections(QHeaderView.ResizeMode.Stretch)
 

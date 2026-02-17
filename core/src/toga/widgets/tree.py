@@ -297,13 +297,17 @@ class Tree(Widget):
         ######################################################################
         # 2026-02: Backwards compatibility for <= 0.5.3
         ######################################################################
-        if column is None and heading is not None:
-            column = heading
-            warnings.warn(
-                "The 'heading' keyword argument is deprecated, use 'column' instead.",
-                DeprecationWarning,
-                stacklevel=-2,
-            )
+        if heading is not None:
+            if column is None:
+                warnings.warn(
+                    "The 'heading' keyword argument is deprecated, "
+                    "use 'column' instead.",
+                    DeprecationWarning,
+                    stacklevel=-2,
+                )
+                column = heading
+            else:
+                raise TypeError("Can't specify both 'column' and 'heading' arguments.")
         ######################################################################
         # End backwards compatibility
         ######################################################################
@@ -329,13 +333,17 @@ class Tree(Widget):
         ######################################################################
         # 2026-02: Backwards compatibility for <= 0.5.3
         ######################################################################
-        if column is None and heading is not None:
-            column = heading
-            warnings.warn(
-                "The 'heading' keyword argument is deprecated, use 'column' instead.",
-                DeprecationWarning,
-                stacklevel=-2,
-            )
+        if heading is not None:
+            if column is None:
+                warnings.warn(
+                    "The 'heading' keyword argument is deprecated, "
+                    "use 'column' instead.",
+                    DeprecationWarning,
+                    stacklevel=-2,
+                )
+                column = heading
+            else:
+                raise TypeError("Can't specify both 'column' and 'heading' arguments.")
         ######################################################################
         # End backwards compatibility
         ######################################################################

@@ -219,13 +219,13 @@ class Table(Widget):
         self.native.horizontalHeader().resizeSections(QHeaderView.ResizeMode.Stretch)
 
     def insert_column(self, index, column):
-        self.native_model._columns.insert(index, column)
         self.native_model.beginInsertColumns(QModelIndex(), index, index)
+        self.native_model._columns.insert(index, column)
         self.native_model.endInsertColumns()
         self.native.horizontalHeader().resizeSections(QHeaderView.ResizeMode.Stretch)
 
     def remove_column(self, index):
-        del self.native_model._columns[index]
         self.native_model.beginRemoveColumns(QModelIndex(), index, index)
+        del self.native_model._columns[index]
         self.native_model.endRemoveColumns()
         self.native.horizontalHeader().resizeSections(QHeaderView.ResizeMode.Stretch)

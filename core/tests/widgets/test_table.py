@@ -547,6 +547,41 @@ def test_insert_column_and_heading(table):
         table.insert_column(1, AccessorColumn("New Column"), heading="New Column")
 
 
+def test_insert_nothing(table):
+    """Need either a column or an accessor when inserting."""
+
+    with pytest.raises(
+        ValueError,
+        match=r"Must specify either a column or an accessor\.",
+    ):
+        table.insert_column(1)
+
+
+def test_warn_accessor_ignored(table):
+    """Accessor ignored when inserting a column object."""
+
+    with pytest.warns(
+        UserWarning,
+        match=r"The 'accessor' argument is ignored when a column object is supplied\.",
+    ):
+        table.insert_column(1, AccessorColumn("New Column"), accessor="extra")
+
+    # The column was added
+    assert_action_performed_with(
+        table,
+        "insert column",
+        index=1,
+        column=AccessorColumn("New Column", "new_column"),
+    )
+    assert table.headings == ["Title", "New Column", "Value"]
+    assert table.accessors == ["key", "new_column", "value"]
+    assert table.columns == [
+        AccessorColumn("Title", "key"),
+        AccessorColumn("New Column", "new_column"),
+        AccessorColumn("Value", "value"),
+    ]
+
+
 def test_insert_column_big_index(table):
     """A column can be inserted at an index bigger than the number of columns."""
 
@@ -760,6 +795,16 @@ def test_append_heading_deprecated(table):
         AccessorColumn("Value", "value"),
         AccessorColumn("New Column", "extra"),
     ]
+
+
+def test_append_column_and_heading(table):
+    """Can't use both column and heading arguments in append_column."""
+
+    with pytest.raises(
+        TypeError,
+        match=r"Can't specify both 'column' and 'heading' arguments\.",
+    ):
+        table.append_column(AccessorColumn("New Column"), heading="New Column")
 
 
 def test_remove_column_object(table):

@@ -220,6 +220,15 @@ def test_create_columns_required():
         toga.Tree()
 
 
+def test_create_columns_and_headings():
+    """A Tree cannot have both columns and headings."""
+    with pytest.raises(
+        TypeError,
+        match=r"Can't specify columns and headings at the same time",
+    ):
+        toga.Tree(columns=[], headings=[])
+
+
 def test_disable_no_op(tree):
     """Tree doesn't have a disabled state."""
     # Enabled by default
@@ -465,7 +474,36 @@ def test_insert_column_unknown_accessor(tree):
         tree.insert_column("unknown", "New Column", accessor="extra")
 
 
-def test_insert_column_index(tree):
+def test_insert_column_heading_column_object_index(tree):
+    """A column can be inserted before another column object."""
+
+    index_column = AccessorColumn("Value", "value")
+    tree.insert_column(index_column, "New Column", accessor="extra")
+
+    # The column was added
+    assert_action_performed_with(
+        tree,
+        "insert column",
+        index=1,
+        column=AccessorColumn("New Column", "extra"),
+    )
+    assert tree.headings == ["Title", "New Column", "Value"]
+    assert tree.accessors == ["key", "extra", "value"]
+    assert tree.columns == [
+        AccessorColumn("Title", "key"),
+        AccessorColumn("New Column", "extra"),
+        AccessorColumn("Value", "value"),
+    ]
+
+
+def test_insert_column_object_index_unknown_column(tree):
+    """If the insertion index accessor is unknown, an error is raised."""
+    index_column = AccessorColumn("Unknown", "missing")
+    with pytest.raises(ValueError, match=r"not in list"):
+        tree.insert_column(index_column, AccessorColumn("New Column", "extra"))
+
+
+def test_insert_column_heading_by_index(tree):
     """A column can be inserted."""
 
     tree.insert_column(1, "New Column", accessor="extra")
@@ -486,10 +524,80 @@ def test_insert_column_index(tree):
     ]
 
 
+def test_insert_column_heading_by_index_heading_argument(tree):
+    """A column can be inserted with the deprecated heading argument."""
+
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"The 'heading' keyword argument is deprecated, use 'column' instead\.",
+    ):
+        tree.insert_column(1, heading="New Column", accessor="extra")
+
+    # The column was added
+    assert_action_performed_with(
+        tree,
+        "insert column",
+        index=1,
+        column=AccessorColumn("New Column", "extra"),
+    )
+    assert tree.headings == ["Title", "New Column", "Value"]
+    assert tree.accessors == ["key", "extra", "value"]
+    assert tree.columns == [
+        AccessorColumn("Title", "key"),
+        AccessorColumn("New Column", "extra"),
+        AccessorColumn("Value", "value"),
+    ]
+
+
+def test_insert_column_and_heading(tree):
+    """Can't use both column and heading arguments in insert_column."""
+
+    with pytest.raises(
+        TypeError,
+        match=r"Can't specify both 'column' and 'heading' arguments\.",
+    ):
+        tree.insert_column(1, AccessorColumn("New Column"), heading="New Column")
+
+
+def test_insert_nothing(tree):
+    """Need either a column or an accessor when inserting."""
+
+    with pytest.raises(
+        ValueError,
+        match=r"Must specify either a column or an accessor\.",
+    ):
+        tree.insert_column(1)
+
+
+def test_warn_accessor_ignored(tree):
+    """Accessor ignored when inserting a column object."""
+
+    with pytest.warns(
+        UserWarning,
+        match=r"The 'accessor' argument is ignored when a column object is supplied\.",
+    ):
+        tree.insert_column(1, AccessorColumn("New Column"), accessor="extra")
+
+    # The column was added
+    assert_action_performed_with(
+        tree,
+        "insert column",
+        index=1,
+        column=AccessorColumn("New Column", "new_column"),
+    )
+    assert tree.headings == ["Title", "New Column", "Value"]
+    assert tree.accessors == ["key", "new_column", "value"]
+    assert tree.columns == [
+        AccessorColumn("Title", "key"),
+        AccessorColumn("New Column", "new_column"),
+        AccessorColumn("Value", "value"),
+    ]
+
+
 def test_insert_column_big_index(tree):
     """A column can be inserted at an index bigger than the number of columns."""
 
-    tree.insert_column(100, "New Column", accessor="extra")
+    tree.insert_column(100, AccessorColumn("New Column", "extra"))
 
     # The column was added
     assert_action_performed_with(
@@ -510,7 +618,7 @@ def test_insert_column_big_index(tree):
 def test_insert_column_negative_index(tree):
     """A column can be inserted at a negative index."""
 
-    tree.insert_column(-2, "New Column", accessor="extra")
+    tree.insert_column(-2, AccessorColumn("New Column", "extra"))
 
     # The column was added
     assert_action_performed_with(
@@ -532,7 +640,7 @@ def test_insert_column_big_negative_index(tree):
     """A column can be inserted at a negative index larger than the number of
     columns."""
 
-    tree.insert_column(-100, "New Column", accessor="extra")
+    tree.insert_column(-100, AccessorColumn("New Column", "extra"))
 
     # The column was added
     assert_action_performed_with(
@@ -575,7 +683,7 @@ def test_insert_column_no_headings(source):
     """A column can be inserted into a tree with no headings."""
     tree = toga.Tree(columns=None, accessors=["key", "value"], data=source)
 
-    tree.insert_column(1, "New Column", accessor="extra")
+    tree.insert_column(1, AccessorColumn("New Column", "extra"))
 
     # The column was added
     assert_action_performed_with(
@@ -637,8 +745,28 @@ def test_insert_column_deprecated_implementation(tree):
     ]
 
 
-def test_append_column(tree):
+def test_append_column_object(tree):
     """A column can be appended."""
+    tree.append_column(AccessorColumn("New Column", "extra"))
+
+    # The column was added
+    assert_action_performed_with(
+        tree,
+        "insert column",
+        index=2,
+        column=AccessorColumn("New Column", "extra"),
+    )
+    assert tree.headings == ["Title", "Value", "New Column"]
+    assert tree.accessors == ["key", "value", "extra"]
+    assert tree.columns == [
+        AccessorColumn("Title", "key"),
+        AccessorColumn("Value", "value"),
+        AccessorColumn("New Column", "extra"),
+    ]
+
+
+def test_append_column_str(tree):
+    """A column can be appended using heading and accessor."""
     tree.append_column("New Column", accessor="extra")
 
     # The column was added
@@ -655,6 +783,40 @@ def test_append_column(tree):
         AccessorColumn("Value", "value"),
         AccessorColumn("New Column", "extra"),
     ]
+
+
+def test_append_heading_deprecated(tree):
+    """Appending a column via heading keyword is deprecated."""
+    with pytest.warns(
+        DeprecationWarning,
+        match="The 'heading' keyword argument is deprecated, use 'column' instead.",
+    ):
+        tree.append_column(heading="New Column", accessor="extra")
+
+    # The column was added
+    assert_action_performed_with(
+        tree,
+        "insert column",
+        index=2,
+        column=AccessorColumn("New Column", "extra"),
+    )
+    assert tree.headings == ["Title", "Value", "New Column"]
+    assert tree.accessors == ["key", "value", "extra"]
+    assert tree.columns == [
+        AccessorColumn("Title", "key"),
+        AccessorColumn("Value", "value"),
+        AccessorColumn("New Column", "extra"),
+    ]
+
+
+def test_append_column_and_heading(tree):
+    """Can't use both column and heading arguments in append_column."""
+
+    with pytest.raises(
+        TypeError,
+        match=r"Can't specify both 'column' and 'heading' arguments\.",
+    ):
+        tree.append_column(AccessorColumn("New Column"), heading="New Column")
 
 
 def test_remove_column_object(tree):
