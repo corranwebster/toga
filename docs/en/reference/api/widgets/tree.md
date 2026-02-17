@@ -10,7 +10,7 @@ In this example, we will display a tree with 2 columns. The tree will have 2 roo
 import toga
 
 tree = toga.Tree(
-    headings=["Name", "Age"],
+    columns=["Name", "Age"],
     data={
         "Earth": {
            ("Arthur Dent", 42): None,
@@ -35,7 +35,7 @@ You can also specify data for a Tree using a list of 2-tuples, with dictionaries
 import toga
 
 tree = toga.Tree(
-    headings=["Name", "Age"],
+    columns=["Name", "Age"],
     data=[
         (
             {"name": "Earth"},
@@ -64,7 +64,7 @@ If you want to use different attributes, you can override them by providing an `
 import toga
 
 tree = toga.Tree(
-    headings=["Name", "Age"],
+    columns=["Name", "Age"],
     accessors={"Name", 'character'},
     data=[
         (

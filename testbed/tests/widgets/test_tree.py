@@ -173,7 +173,7 @@ async def multiselect_probe(main_window, multiselect_widget):
 
 test_cleanup = build_cleanup_test(
     toga.Tree,
-    kwargs={"headings": ["A", "B", "C"]},
+    kwargs={"columns": ["A", "B", "C"]},
     skip_platforms=(
         "iOS",
         "android",

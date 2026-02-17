@@ -22,7 +22,7 @@ class TogaDemo(toga.App):
 
         try:
             left_tree = toga.Tree(
-                headings=["Navigate"],
+                columns=["Navigate"],
                 data={
                     ("root1",): {},
                     ("root2",): {
