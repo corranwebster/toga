@@ -36,7 +36,7 @@ class OnActivateHandler(Protocol):
 class Tree(Widget):
     def __init__(
         self,
-        columns: Iterable[str] | None = None,
+        columns: Iterable[str | ColumnT[Value]] | None = None,
         id: str | None = None,
         style: Pack | None = None,
         data: TreeSourceT | object | None = None,

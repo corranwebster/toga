@@ -69,13 +69,13 @@ class Column(ColumnT[Value], Generic[Value]):
     as needed.
     """
 
-    def __init__(self, heading):
+    def __init__(self, heading: str | None):
         self._heading = heading
 
     @property
     def heading(self) -> str:
         """The heading text for this column."""
-        return self._heading
+        return self._heading if self._heading is not None else ""
 
     def value(self, row: Any) -> Value | None:
         """Get a value from the row of a Source.
@@ -111,7 +111,7 @@ class Column(ColumnT[Value], Generic[Value]):
         """
         return None
 
-    def widget(self, row: Row[Value]) -> Widget | None:
+    def widget(self, row: Any) -> Widget | None:
         """Get a widget from the Row or Node of a ListSource or TreeSource.
 
         If the value is a widget, it is returned, otherwise None is returned
@@ -119,9 +119,10 @@ class Column(ColumnT[Value], Generic[Value]):
         :param row: A row object from the underlying Source.
         :returns: The Widget to use, or None if no Widget.
         """
+        return None
 
 
-class AccessorColumn(ColumnT[Value]):
+class AccessorColumn(Column[Value], Generic[Value]):
     """This is a column which implements accessor semantics.
 
     The value of a cell in an AccessorColumn is found by getting the value of
@@ -158,23 +159,12 @@ class AccessorColumn(ColumnT[Value]):
                 raise ValueError(
                     "Cannot create a column without either headings or accessors"
                 )
-        self._heading = heading
+        super().__init__(heading)
         self._accessor = accessor
 
     def __eq__(self, other):
         if type(other) is type(self):
-            print(
-                "here",
-                self._heading == other._heading and self._accessor == other._accessor,
-            )
             return self._heading == other._heading and self._accessor == other._accessor
-        return NotImplemented
-
-    def __ne__(self, other):
-        if type(other) is type(self):
-            return not (
-                self._heading == other._heading and self._accessor == other._accessor
-            )
         return NotImplemented
 
     def __repr__(self):
@@ -183,10 +173,6 @@ class AccessorColumn(ColumnT[Value]):
 
     def __hash__(self):
         return hash((self.__class__, self._heading, self._accessor))
-
-    @property
-    def heading(self):
-        return self._heading if self._heading is not None else ""
 
     @property
     def accessor(self):

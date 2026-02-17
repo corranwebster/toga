@@ -12,7 +12,7 @@ Each `AccessorColumn` holds the heading text and an attribute name that is used 
 
 -8<- "snippets/accessor-values.md"
 
-You can define your own subclasses that can override the way that text and icons are computed to provide custom formatting of text.  For example, we could create a column that takes a value which is a list of strings and formats it as a comma-sparated list as follows:
+You can define your own subclasses that can override the way that text and icons are computed to provide custom formatting of text.  For example, we could create a column that takes a value which is a list of strings and formats it as a comma-separated list as follows:
 
 ```python
 class ListStrColumn(AccessorColumn):

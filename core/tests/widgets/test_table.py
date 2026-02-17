@@ -206,6 +206,15 @@ def test_create_columns_required():
         toga.Table()
 
 
+def test_create_columns_and_headings():
+    """A Table cannot have both columns and headings."""
+    with pytest.raises(
+        TypeError,
+        match=r"Can't specify columns and headings at the same time",
+    ):
+        toga.Table(columns=[], headings=[])
+
+
 def test_disable_no_op(table):
     """Table doesn't have a disabled state."""
     # Enabled by default
@@ -501,6 +510,41 @@ def test_insert_column_heading_by_index(table):
         AccessorColumn("New Column", "extra"),
         AccessorColumn("Value", "value"),
     ]
+
+
+def test_insert_column_heading_by_index_heading_argument(table):
+    """A column can be inserted with the deprecated heading argument."""
+
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"The 'heading' keyword argument is deprecated, use 'column' instead\.",
+    ):
+        table.insert_column(1, heading="New Column", accessor="extra")
+
+    # The column was added
+    assert_action_performed_with(
+        table,
+        "insert column",
+        index=1,
+        column=AccessorColumn("New Column", "extra"),
+    )
+    assert table.headings == ["Title", "New Column", "Value"]
+    assert table.accessors == ["key", "extra", "value"]
+    assert table.columns == [
+        AccessorColumn("Title", "key"),
+        AccessorColumn("New Column", "extra"),
+        AccessorColumn("Value", "value"),
+    ]
+
+
+def test_insert_column_and_heading(table):
+    """Can't use both column and heading arguments in insert_column."""
+
+    with pytest.raises(
+        TypeError,
+        match=r"Can't specify both 'column' and 'heading' arguments\.",
+    ):
+        table.insert_column(1, AccessorColumn("New Column"), heading="New Column")
 
 
 def test_insert_column_big_index(table):
