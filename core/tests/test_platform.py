@@ -390,3 +390,25 @@ def test_environment_variable_fail(monkeypatch):
 
     backend = _import_backend()
     assert backend == "fake_platform_module"
+
+
+def test_factory_class():
+    factory = Factory()
+
+    assert factory.interface == "toga_core"
+    assert factory.group == "toga_core.backend.toga_dummy"
+
+
+def test_factory_class_interface():
+    factory = Factory("togax_dummy")
+
+    assert factory.interface == "togax_dummy"
+    assert factory.group == "togax_dummy.backend.toga_dummy"
+
+
+def test_factor_class_warns_togax():
+    with pytest.warns(
+        RuntimeWarning,
+        match=r"Third party interface names should start with 'togax_'",
+    ):
+        Factory("foo_test")

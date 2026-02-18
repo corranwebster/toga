@@ -138,10 +138,9 @@ def get_platform_factory() -> ModuleType:
 class Factory:
     """An object that lazily loads backend implementations from entrypoints."""
 
-    def __init__(self, interface):
+    def __init__(self, interface=None):
         if interface is None:
             self.interface = "toga_core"
-            self._group_base = "toga_core.backend"
         else:
             if not interface.startswith("togax_"):
                 warnings.warn(
@@ -150,25 +149,27 @@ class Factory:
                     stacklevel=2,
                 )
             self.interface = interface
-            self._group_base = "{interface}.backend"
         self._entrypoints = None
 
     @property
     def group(self) -> str:
         backend = get_backend()
-        return f"{self._group_base}.{backend}"
+        return f"{self.interface}.backend.{backend}"
 
     def not_implemented(self, feature):
         backend = get_backend()
         NotImplementedWarning.warn(backend, feature)
 
     def _load_entrypoints(self):
-        self._entrypoints = {}
+        if self._entrypoints is None:
+            self._entrypoints = {}
         for entrypoint in entry_points(group=self.group):
             if entrypoint.name in self._entrypoints:
+                # can't test this in core tests
+                # pragma: no cover
                 other = self._entrypoints[entrypoint.name]
                 warnings.warn(
-                    f"Entrypoint '{entrypoint.name}' is defined multiple times in "
+                    f"Entrypoint {entrypoint.name!r} is defined multiple times in "
                     f"group {self.group}: {other.value} and {entrypoint.value}. "
                     "The first will be used.",
                     RuntimeWarning,

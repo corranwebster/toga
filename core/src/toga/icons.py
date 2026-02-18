@@ -108,7 +108,10 @@ class Icon:
                 if isinstance(self.factory, Factory):
                     resource_path = Path(self.factory.resources.__file__).parent
                 else:
-                    resource_path = Path(self.factory.__file__).parent / "resources"
+                    # doesn't get covered in core tests
+                    resource_path = (
+                        Path(self.factory.__file__).parent / "resources"
+                    )  # pragma: no cover
             else:
                 resource_path = toga.App.app.paths.app
 
