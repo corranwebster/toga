@@ -59,6 +59,32 @@ Changelog = "https://toga.beeware.org/en/stable/background/project/releases"
 [project.entry-points."toga.backends"]
 web = "toga_web"
 
+[project.entry-points."toga_core.backend.toga_web"]
+App = "toga_web.app:App"
+Command = "toga_web.command:Command"
+Font = "toga_web.fonts:Font"
+Icon = "toga_web.icons:Icon"
+Paths = "toga_web.paths:Paths"
+dialogs = "toga_web.dialogs"
+resources = "toga_web.resources"
+MenuStatusIcon = "toga_web.statusicons:MenuStatusIcon"
+SimpleStatusIcon = "toga_web.statusicons:SimpleStatusIcon"
+StatusIconSet = "toga_web.statusicons:StatusIconSet"
+Box = "toga_web.widgets.box:Box"
+Button = "toga_web.widgets.button:Button"
+DateInput = "toga_web.widgets.dateinput:DateInput"
+Divider = "toga_web.widgets.divider:Divider"
+Label = "toga_web.widgets.label:Label"
+PasswordInput = "toga_web.widgets.passwordinput:PasswordInput"
+ProgressBar = "toga_web.widgets.progressbar:ProgressBar"
+ScrollContainer = "toga_web.widgets.scrollcontainer:ScrollContainer"
+Selection = "toga_web.widgets.selection:Selection"
+Slider = "toga_web.widgets.slider:Slider"
+Switch = "toga_web.widgets.switch:Switch"
+TextInput = "toga_web.widgets.textinput:TextInput"
+MainWindow = "toga_web.window:MainWindow"
+Window = "toga_web.window:Window"
+
 [tool.setuptools_scm]
 root = ".."
 

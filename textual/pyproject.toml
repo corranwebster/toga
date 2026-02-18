@@ -61,6 +61,24 @@ windows = "toga_textual"
 macOS = "toga_textual"
 freeBSD = "toga_textual"
 
+[project.entry-points."toga_core.backend.toga_textual"]
+App = "toga_textual.app:App"
+Command = "toga_textual.command:Command"
+Font = "toga_textual.fonts:Font"
+Icon = "toga_textual.icons:Icon"
+Paths = "toga_textual.paths:Paths"
+dialogs = "toga_textual.dialogs"
+resources = "toga_textual.resources"
+MenuStatusIcon = "toga_textual.statusicons:MenuStatusIcon"
+SimpleStatusIcon = "toga_textual.statusicons:SimpleStatusIcon"
+StatusIconSet = "toga_textual.statusicons:StatusIconSet"
+Box = "toga_textual.widgets.box:Box"
+Button = "toga_textual.widgets.button:Button"
+Label = "toga_textual.widgets.label:Label"
+TextInput = "toga_textual.widgets.textinput:TextInput"
+MainWindow = "toga_textual.window:MainWindow"
+Window = "toga_textual.window:Window"
+
 [tool.setuptools_scm]
 root = ".."
 

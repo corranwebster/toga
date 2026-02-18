@@ -143,6 +143,7 @@ formal_name = "Toga Testbed (Qt)"
 sources = [
     "src/testbed_qt",
     "src/testbed",
+    "../qt/tests_backend",
 ]
 
 [tool.briefcase.app.testbed-qt.linux]
