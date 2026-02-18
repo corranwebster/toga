@@ -3,9 +3,12 @@ from __future__ import annotations
 import importlib
 import os
 import sys
+import warnings
 from functools import cache
 from importlib.metadata import entry_points
 from types import ModuleType
+
+from . import NotImplementedWarning
 
 # Map python sys.platform with toga platforms names
 _TOGA_PLATFORMS = {
@@ -64,38 +67,13 @@ def find_backends():
 
 
 @cache
-def get_platform_factory() -> ModuleType:
-    """Determine the current host platform and import the platform factory.
-
-    If the `TOGA_BACKEND` environment variable is set, the factory will be loaded
-    from that module.
-
-    Raises [`RuntimeError`][] if an appropriate host platform cannot be identified.
-
-    :returns: The factory for the host platform.
-    """
-    if backend_value := os.environ.get("TOGA_BACKEND"):
-        try:
-            factory = importlib.import_module(f"{backend_value}.factory")
-        except ModuleNotFoundError as exc:
-            toga_backends_values = ", ".join(
-                [f"{backend.value!r}" for backend in find_backends()]
-            )
-            # Android doesn't report Python exception chains in crashes
-            # (https://github.com/chaquo/chaquopy/issues/890), so include the original
-            # exception message in case the backend does exist but throws a
-            # ModuleNotFoundError from one of its internal imports.
-            raise RuntimeError(
-                f"The backend specified by TOGA_BACKEND ({backend_value!r}) could "
-                f"not be loaded ({exc}). It should be one of: {toga_backends_values}."
-            ) from exc
-
-    else:
+def get_backend():
+    if (backend := os.environ.get("TOGA_BACKEND")) is None:
         toga_backends = find_backends()
         if len(toga_backends) == 0:
-            raise RuntimeError("No Toga backend could be loaded.")
+            raise RuntimeError("No Toga backend could be found.")
         elif len(toga_backends) == 1:
-            backend = toga_backends[0]
+            backend = toga_backends[0].value
         else:
             # multiple backends are installed: choose the one that
             # matches the host platform
@@ -126,8 +104,106 @@ def get_platform_factory() -> ModuleType:
                     f"Uninstall the backends you don't require, or use "
                     f"TOGA_BACKEND to specify a backend."
                 )
-            backend = matching_backends[0]
-        factory = importlib.import_module(f"{backend.value}.factory")
+            backend = matching_backends[0].value
+    return backend
+
+
+@cache
+def get_platform_factory() -> ModuleType:
+    """Determine the current host platform and import the platform factory.
+
+    If the `TOGA_BACKEND` environment variable is set, the factory will be loaded
+    from that module.
+
+    Raises [`RuntimeError`][] if an appropriate host platform cannot be identified.
+
+    :returns: The factory for the host platform.
+    """
+    backend = get_backend()
+    try:
+        factory = importlib.import_module(f"{backend}.factory")
+    except ModuleNotFoundError as exc:
+        toga_backends_values = ", ".join([f"{b.value!r}" for b in find_backends()])
+        # Android doesn't report Python exception chains in crashes
+        # (https://github.com/chaquo/chaquopy/issues/890), so include the original
+        # exception message in case the backend does exist but throws a
+        # ModuleNotFoundError from one of its internal imports.
+        raise RuntimeError(
+            f"The backend specified by TOGA_BACKEND ({backend!r}) could "
+            f"not be loaded ({exc}). It should be one of: {toga_backends_values}."
+        ) from exc
+    return factory
+
+
+class Factory:
+    """An object that lazily loads backend implementations from entrypoints."""
+
+    def __init__(self, interface):
+        if interface is None:
+            self.interface = "toga_core"
+            self._group_base = "toga_core.backend"
+        else:
+            if not interface.startswith("togax_"):
+                warnings.warn(
+                    "Third party interface names should start with 'togax_'",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+            self.interface = interface
+            self._group_base = "{interface}.backend"
+        self._entrypoints = None
+
+    @property
+    def group(self) -> str:
+        backend = get_backend()
+        return f"{self._group_base}.{backend}"
+
+    def not_implemented(self, feature):
+        backend = get_backend()
+        NotImplementedWarning.warn(backend, feature)
+
+    def _load_entrypoints(self):
+        self._entrypoints = {}
+        for entrypoint in entry_points(group=self.group):
+            if entrypoint.name in self._entrypoints:
+                other = self._entrypoints[entrypoint.name]
+                warnings.warn(
+                    f"Entrypoint '{entrypoint.name}' is defined multiple times in "
+                    f"group {self.group}: {other.value} and {entrypoint.value}. "
+                    "The first will be used.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+            else:
+                self._entrypoints[entrypoint.name] = entrypoint
+
+    def __getattr__(self, name):
+        if self._entrypoints is None:
+            self._load_entrypoints()
+        if name in self._entrypoints:
+            value = self._entrypoints[name].load()
+            setattr(self, name, value)
+            return value
+        else:
+            backend = get_backend()
+            raise NotImplementedError(
+                f"The {backend!r} backend for the {self.interface} interface "
+                f"doesn't implement {name}"
+            )
+
+
+@cache
+def get_factory(interface: str | None = None):
+    factory = Factory(interface)
+    # -------------------------------------------------------------------------
+    # Backwards compatibility: Feb 2026
+    # If we can't find the entrypoint group we expect, drop back to the old
+    # system using a factory module
+    print("here", factory.group, entry_points(group=factory.group))
+    if interface is None and len(entry_points(group=factory.group)) == 0:
+        factory = get_platform_factory()
+    # End backwards compatibility
+    # -------------------------------------------------------------------------
     return factory
 
 
@@ -140,7 +216,7 @@ platform-specific capabilities (e.g., `toga_cocoa`, `toga_gtk`).
 def __getattr__(name):
     if name == "backend":
         global backend
-        backend = get_platform_factory().__package__
+        backend = get_backend()
         return backend
     else:
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'") from None

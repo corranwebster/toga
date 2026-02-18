@@ -9,7 +9,7 @@ from warnings import warn
 from travertino.node import Node
 from travertino.style import BaseStyle
 
-from toga.platform import get_platform_factory
+from toga.platform import get_factory
 from toga.style import Pack, TogaApplicator
 from toga.style.mixin import style_mixin
 
@@ -94,7 +94,7 @@ class Widget(Node, PackMixin, ABC):
         self._app: App | None = None
 
         # Get factory and assign implementation
-        self.factory = get_platform_factory()
+        self.factory = get_factory()
 
         ##################################################################
         # 2024-12: Backwards compatibility for Toga < 0.5.0

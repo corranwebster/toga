@@ -37,7 +37,10 @@ async def test_unsupported_widget(app):
     """If a widget isn't implemented, the factory raises NotImplementedError."""
     with pytest.raises(NotImplementedError) as exc:
         _ = app.factory.NoSuchWidget
-    assert "Toga's Dummy backend doesn't implement NoSuchWidget" in str(exc)
+    assert (
+        "The 'toga_dummy' backend for the toga_core interface doesn't implement "
+        "NoSuchWidget"
+    ) in str(exc)
 
 
 @pytest.mark.parametrize(
