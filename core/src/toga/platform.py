@@ -161,12 +161,10 @@ class Factory:
         NotImplementedWarning.warn(backend, feature)
 
     def _load_entrypoints(self):
-        if self._entrypoints is None:
-            self._entrypoints = {}
+        self._entrypoints = {}
         for entrypoint in entry_points(group=self.group):
-            if entrypoint.name in self._entrypoints:
+            if entrypoint.name in self._entrypoints:  # pragma: no cover
                 # can't test this in core tests
-                # pragma: no cover
                 other = self._entrypoints[entrypoint.name]
                 warnings.warn(
                     f"Entrypoint {entrypoint.name!r} is defined multiple times in "
