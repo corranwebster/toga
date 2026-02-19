@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from builtins import id as identifier
 from os import environ
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 from warnings import warn
 
 from travertino.node import Node
@@ -45,6 +45,9 @@ DEBUG_BACKGROUND_PALETTE = [
 class Widget(Node, PackMixin, ABC):
     _MIN_WIDTH = 100
     _MIN_HEIGHT = 100
+
+    # The interface group this widget is in (or None for toga_core)
+    _interface_group: ClassVar[str | None] = None
 
     DEBUG_LAYOUT_ENABLED = False
     """Determines whether debug layout mode is enabled.
@@ -94,7 +97,7 @@ class Widget(Node, PackMixin, ABC):
         self._app: App | None = None
 
         # Get factory and assign implementation
-        self.factory = get_factory()
+        self.factory = get_factory(self._interface_group)
 
         ##################################################################
         # 2024-12: Backwards compatibility for Toga < 0.5.0

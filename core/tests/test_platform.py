@@ -133,13 +133,14 @@ def _get_factory():
     get_backend.cache_clear()
     if hasattr(toga.platform, "backend"):
         del toga.platform.backend
-    factory = get_factory()
-    get_factory.cache_clear()
-    get_platform_factory.cache_clear()
-    get_backend.cache_clear()
-    if hasattr(toga.platform, "backend"):
-        del toga.platform.backend
-    return factory
+    try:
+        return get_factory()
+    finally:
+        get_factory.cache_clear()
+        get_platform_factory.cache_clear()
+        get_backend.cache_clear()
+        if hasattr(toga.platform, "backend"):
+            del toga.platform.backend
 
 
 def _get_platform_factory():
@@ -147,12 +148,13 @@ def _get_platform_factory():
     get_backend.cache_clear()
     if hasattr(toga.platform, "backend"):
         del toga.platform.backend
-    factory = get_platform_factory()
-    get_platform_factory.cache_clear()
-    get_backend.cache_clear()
-    if hasattr(toga.platform, "backend"):
-        del toga.platform.backend
-    return factory
+    try:
+        return get_platform_factory()
+    finally:
+        get_platform_factory.cache_clear()
+        get_backend.cache_clear()
+        if hasattr(toga.platform, "backend"):
+            del toga.platform.backend
 
 
 def _import_backend():
@@ -160,13 +162,15 @@ def _import_backend():
     get_backend.cache_clear()
     if hasattr(toga.platform, "backend"):
         del toga.platform.backend
-    from toga.platform import backend
+    try:
+        from toga.platform import backend
 
-    if hasattr(toga.platform, "backend"):
-        del toga.platform.backend
-    get_platform_factory.cache_clear()
-    get_backend.cache_clear()
-    return backend
+        return backend
+    finally:
+        if hasattr(toga.platform, "backend"):
+            del toga.platform.backend
+        get_platform_factory.cache_clear()
+        get_backend.cache_clear()
 
 
 def test_no_platforms(monkeypatch, clean_env):
@@ -354,48 +358,55 @@ def test_multiple_platforms_installed_fail_none_appropriate(monkeypatch, clean_e
 
 def test_environment_variable(monkeypatch):
     monkeypatch.setenv("TOGA_BACKEND", "toga_dummy")
-    assert toga_dummy.factory == _get_platform_factory()
+    try:
+        assert toga_dummy.factory == _get_platform_factory()
 
-    factory = _get_factory()
-    assert isinstance(factory, Factory)
-    assert factory.interface == "toga_core"
-    assert factory.group == "toga_core.backend.toga_dummy"
-    assert factory.App is App
+        factory = _get_factory()
+        assert isinstance(factory, Factory)
+        assert factory.interface == "toga_core"
+        assert factory.group == "toga_core.backend.toga_dummy"
+        assert factory.App is App
 
-    backend = _get_backend()
-    assert backend == "toga_dummy"
+        backend = _get_backend()
+        assert backend == "toga_dummy"
 
-    backend = _import_backend()
-    assert backend == "toga_dummy"
+        backend = _import_backend()
+        assert backend == "toga_dummy"
+    finally:
+        monkeypatch.delenv("TOGA_BACKEND")
 
 
-def test_environment_variable_fail(monkeypatch):
+def test_environment_variable_fail(monkeypatch, clean_env):
     monkeypatch.setenv("TOGA_BACKEND", "fake_platform_module")
-    with pytest.raises(
-        RuntimeError,
-        match=r"The backend specified by TOGA_BACKEND "
-        r"\('fake_platform_module'\) could not be loaded.",
-    ):
-        _get_platform_factory()
+    try:
+        with pytest.raises(
+            RuntimeError,
+            match=r"The backend specified by TOGA_BACKEND "
+            r"\('fake_platform_module'\) could not be loaded.",
+        ):
+            _get_platform_factory()
 
-    with pytest.raises(
-        RuntimeError,
-        match=r"The backend specified by TOGA_BACKEND "
-        r"\('fake_platform_module'\) could not be loaded.",
-    ):
-        _get_factory()
+        with pytest.raises(
+            RuntimeError,
+            match=r"The backend specified by TOGA_BACKEND "
+            r"\('fake_platform_module'\) could not be loaded.",
+        ):
+            _get_factory()
 
-    backend = _get_backend()
-    assert backend == "fake_platform_module"
+        backend = _get_backend()
+        assert backend == "fake_platform_module"
 
-    backend = _import_backend()
-    assert backend == "fake_platform_module"
+        backend = _import_backend()
+        assert backend == "fake_platform_module"
+    finally:
+        monkeypatch.delenv("TOGA_BACKEND")
 
 
 def test_factory_class():
     factory = Factory()
 
     assert factory.interface == "toga_core"
+    assert factory.backend == "toga_dummy"
     assert factory.group == "toga_core.backend.toga_dummy"
 
 
@@ -403,7 +414,19 @@ def test_factory_class_interface():
     factory = Factory("togax_dummy")
 
     assert factory.interface == "togax_dummy"
+    assert factory.backend == "toga_dummy"
     assert factory.group == "togax_dummy.backend.toga_dummy"
+
+
+def test_factor_class_warns_toga():
+    with pytest.warns(
+        RuntimeWarning,
+        match=(
+            r"Unrecognized official Toga interface 'toga_nonexistent'\. "
+            r"Third party interface names should start with 'togax_'"
+        ),
+    ):
+        Factory("toga_nonexistent")
 
 
 def test_factor_class_warns_togax():

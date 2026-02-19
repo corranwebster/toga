@@ -24,6 +24,9 @@ _TOGA_PLATFORMS = {
     "win32": "windows",
 }
 
+# Official Toga interface entry-point groups.
+_TOGA_INTERFACES = {"toga_core"}
+
 
 def get_current_platform() -> str | None:
     # Rely on `sys.getandroidapilevel`, which only exists on Android; see
@@ -112,6 +115,8 @@ def get_backend():
 def get_platform_factory() -> ModuleType:
     """Determine the current host platform and import the platform factory.
 
+    **DEPRECATED**: Use get_factory() and entry points instead of factory modules.
+
     If the `TOGA_BACKEND` environment variable is set, the factory will be loaded
     from that module.
 
@@ -142,7 +147,14 @@ class Factory:
         if interface is None:
             self.interface = "toga_core"
         else:
-            if not interface.startswith("togax_"):
+            if interface.startswith("toga_") and interface not in _TOGA_INTERFACES:
+                warnings.warn(
+                    f"Unrecognized official Toga interface '{interface}'. "
+                    "Third party interface names should start with 'togax_'",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+            elif not interface.startswith("togax_"):
                 warnings.warn(
                     "Third party interface names should start with 'togax_'",
                     RuntimeWarning,
@@ -150,15 +162,20 @@ class Factory:
                 )
             self.interface = interface
         self._entrypoints = None
+        self._backend = None
+
+    @property
+    def backend(self) -> str:
+        if self._backend is None:
+            self._backend = get_backend()
+        return self._backend
 
     @property
     def group(self) -> str:
-        backend = get_backend()
-        return f"{self.interface}.backend.{backend}"
+        return f"{self.interface}.backend.{self.backend}"
 
     def not_implemented(self, feature):
-        backend = get_backend()
-        NotImplementedWarning.warn(backend, feature)
+        NotImplementedWarning.warn(self.backend, feature)
 
     def _load_entrypoints(self):
         self._entrypoints = {}
@@ -184,23 +201,35 @@ class Factory:
             setattr(self, name, value)
             return value
         else:
-            backend = get_backend()
             raise NotImplementedError(
-                f"The {backend!r} backend for the {self.interface} interface "
+                f"The {self.backend!r} backend for the {self.interface} interface "
                 f"doesn't implement {name}"
             )
 
 
 @cache
-def get_factory(interface: str | None = None):
+def get_factory(interface: str | None = None) -> Factory | ModuleType:
+    """Return the implementation factory for an interface group.
+
+    The object that is returned is a namespace whose attributes are the
+    implementation classes for the current backend contributed by the
+    appropriate entry points.
+
+    :param interface: the name of the interface group for the factory, or None
+        for the default `"toga_core"` interface.  Third-party interface group
+        names should start with `"togax_"`.
+    :returns: The factory namespace object.
+    """
     factory = Factory(interface)
     # -------------------------------------------------------------------------
-    # Backwards compatibility: Feb 2026
+    # 2026-02: Backwards compatibility for version <= 0.5.3
+    # -------------------------------------------------------------------------
     # If we can't find the entrypoint group we expect, drop back to the old
     # system using a factory module
-    print("here", factory.group, entry_points(group=factory.group))
+    print(interface, factory.group, entry_points(group=factory.group))
     if interface is None and len(entry_points(group=factory.group)) == 0:
         factory = get_platform_factory()
+    # -------------------------------------------------------------------------
     # End backwards compatibility
     # -------------------------------------------------------------------------
     return factory
