@@ -65,7 +65,7 @@ import toga
 
 tree = toga.Tree(
     columns=["Name", "Age"],
-    accessors={"Name", 'character'},
+    accessors={"Name": 'character'},
     data=[
         (
             {"character": "Earth"},
