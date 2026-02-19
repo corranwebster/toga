@@ -166,12 +166,9 @@ class TableColumnApp(toga.App):
             self.table2.append_column(self.rating_column)
             self.btn_rating.text = "Remove Ratings"
 
-    def add_genre(self, widget, **kwargs):
-        pass
-
     def startup(self):
         loc = locale.setlocale(locale.LC_ALL)
-        print(loc)
+        print("Using locale:", loc)
 
         self.main_window = toga.MainWindow()
 
