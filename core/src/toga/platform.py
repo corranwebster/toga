@@ -4,7 +4,7 @@ import importlib
 import os
 import sys
 import warnings
-from functools import cache
+from functools import cache, cached_property
 from importlib.metadata import entry_points
 from types import ModuleType
 
@@ -162,15 +162,12 @@ class Factory:
                 )
             self.interface = interface
         self._entrypoints = None
-        self._backend = None
 
-    @property
+    @cached_property
     def backend(self) -> str:
-        if self._backend is None:
-            self._backend = get_backend()
-        return self._backend
+        return get_backend()
 
-    @property
+    @cached_property
     def group(self) -> str:
         return f"{self.interface}.backend.{self.backend}"
 

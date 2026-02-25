@@ -1,16 +1,18 @@
 # Extending Toga
 
-While Toga provides a rich set of features, because it is a cross-platform library it provides it necessarily can't provide every widget that is available on every platform.  Additionally, because widgets are implemented as time permits by contributors some backends may lack versions of some widgets that others have from time-to-time.  This means that application authors may find themselves in a situation where they need to write a custom widget.  This topic guide explains how Toga finds widget implementations, and how people can expand the available widgets for their application.
+While Toga provides a rich set of features because it is a cross-platform library it can't provide every widget that is available on every platform.  Additionally, because widgets are implemented as time permits by contributors, on occasion some backends may lack versions of some widgets that others backends provide.  This means that application authors may find themselves in a situation where they need to write a custom widget.  This topic guide explains how Toga finds widget implementations, and how people can expand the available widgets for their application.
 
 ## Writing a Widget
 
-As noted in the [Internal architecture](architecture.md) topic guide, a widget is made up of three layers: interface, implementation, and native.  Every interface widget has a `_create` method that is responsible for creating the implementation of the widget.  The implementation should be passed the interface object to its `__init__` method. The implementation in turn has its own `create` method that should create any native widgets or other state that is needed.  So if you are creating a widget for your own application where you only care about one backend, you can have the `create` directly import the implementation class and instantiate it.
+As noted in the [Internal architecture](architecture.md) topic guide, a widget is made up of three layers: interface, implementation, and native.  Every interface widget has a `_create` method that is responsible for creating the implementation of the widget, and passing the interface object to the new implementation object's `__init__` method. The implementation in turn has its own `create` method that should create any native widgets or other state that is needed when the widget is added to the layout, and also should implement at least the `rehint` method to help the layout system determine the size of the widget.
+
+In the simplest possible case if you are creating a widget for your own application where you only care about one backend, you can write the implementation class and and an interface where the `_create` method directly imports the implementation class and instantiates it.
 
 ### Example: A Qt Dial
 
 As an example, the Qt library has a `QDial` class that acts a lot like a [`Slider`][toga.Slider] but displays a round dial instead of a linear slider.  We can write a subclass of [`Slider`][toga.Slider] that will use a `QDial` as follows.
 
-In `dial.py` we create a subclass of [`Slider`][toga.Slider]
+In `dial.py` we create a subclass of [`Slider`][toga.Slider] with a `_create` method that imports the qt `Dial` implementation and instantiates it:
 ``` python
 from toga import Slider
 
@@ -21,8 +23,7 @@ class Dial(Slider):
         from .qt_dial import Dial
         return Dial(interface=self)
 ```
-
-In `qt_dial.py` we create a subclass of `toga_qt.widgets.slider.Slider` that creates a `QDial`:
+Then in `qt_dial.py` we create a subclass of `toga_qt.widgets.slider.Slider` that creates a `QDial`:
 ``` python
 from PySide6.QtWidgets import QDial
 from toga_qt.widgets.slider import Slider
@@ -37,6 +38,9 @@ class Dial(Slider):
         self.native.valueChanged.connect(self.qt_on_change)
         self.native.sliderPressed.connect(self.qt_on_press)
         self.native.sliderReleased.connect(self.qt_on_release)
+
+    def rehint(self):
+        ...
 ```
 
 More complex widgets will obviously have a lot more to them, but this will often be sufficient for a one-off custom widget for an application.
@@ -135,9 +139,9 @@ All of the examples with multiple backends rely on widgets which already exist a
 
 We could implement them using the `toga_core.backend.*` groups, but this runs the risk of colliding with other libraries, or with future widgets added to Toga by the core team.  The solution in this case is to create your own custom `togax_*` interface and use it instead of `toga_core`.
 
-For example, at the time of writing the Toga core does not provide a `Toggle Button` widget (ie. a push-button which toggles state when pressed), relying on the similar `Switch` for this sort of UI interaction.  We could write a library which provides this widget in the following way.
+For example, at the time of writing the Toga core does not provide a `Toggle Button` widget (ie. a push-button which toggles state when pressed) or a checkbox widget, relying on the similar `Switch` for this sort of UI interaction.  We could write a library which provides these extra button widgets in the following way.
 
-We will call the library `togax_toggle` and write a collection of implementations as `togax_toggle.cocoa_toggle`, `togax_toggle.gtk_toggle`, `togax_toggle.qt_toggle`, `togax_toggle.winforms_toggle` and so-on.  For example `togax_toggle.qt_toggle` might look something like:
+We will call the library `extra_switches` and write a collection of implementations as `extra_switches.cocoa_toggle`, `extra_switches.cocoa_checkbox`, `extra_switches.qt_toggle`, `extra_switches.qt_checkbox`, and so-on.  For example `extra_switches.qt_toggle` might look something like:
 ``` python
 from PySide6.QtWidgets import QPushButton
 from travertino.size import at_least
@@ -153,24 +157,35 @@ class Toggle(Switch):
 ```
 Other backends would be implemented similarly.
 
-When it comes time to write the interface class we can base it directly on `Switch`, but instead of being in the `toga_core` set of widge interfaces, it is in the `togax_toggle` interface group.  This is indicated by [`_interface_group`][toga.widgets.base._interface_group] class attribute, which is passed to the factory so that it uses the correct entry points:
+When it comes time to write the interface class for `Toggle` we can base it directly on `Switch`, but instead of being in the `toga_core` set of widge interfaces, it is in the `togax_extra_switches` interface group and so we need to override the `factory` property of the interface widget to return a factory for this interface group.
 ``` python
+from functools import cached_property
+
 from toga import Switch
 
 class Toggle(Switch)
-    _interface_group = "togax_toggle"
+
+    @cached_property
+    def factory(self):
+        return get_factory("togax_extra_switches")
+
+    def _create(self):
+        self.factory.Toggle(interface=self)
 ```
 
 Once this is written, we can add the entry points to the `pyproject.toml`:
 ``` toml
-[project.entry-points."togax_toggle.backend.toga_qt"]
-Toggle = "togax_toggle.qt_toggle:Toggle"
+[project.entry-points."togax_extra_switches.backend.toga_qt"]
+Toggle = "extra_switches.qt_toggle:Toggle"
+Checkbox = "extra_switches.qt_checkbox:Checkbox"
 
-[project.entry-points."togax_toggle.backend.toga_gtk"]
-Toggle = "togax_toggle.gtk_toggle:Toggle"
+[project.entry-points."togax_extra_switches.backend.toga_gtk"]
+Toggle = "extra_switches.gtk_toggle:Toggle"
+Checkbox = "extra_switches.gtk_checkbox:Checkbox"
 
-[project.entry-points."togax_toggle.backend.toga_cocoa"]
-Toggle = "togax_toggle.cocoa_toggle:Toggle"
+[project.entry-points."togax_extra_switches.backend.toga_cocoa"]
+Toggle = "extra_switches.cocoa_toggle:Toggle"
+Checkbox = "extra_switches.cocoa_checkbox:Checkbox"
 ```
 and so on.
 

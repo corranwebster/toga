@@ -1,0 +1,21 @@
+[build-system]
+requires = [
+    "setuptools==82.0.0",
+    "setuptools_scm==9.2.2",
+    "setuptools_dynamic_dependencies==1.0.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "helloworld"
+version = "0.0.1"
+
+# New Widgets
+[project.entry-points."togax_hello_world.backend.toga_qt"]
+HelloWorld = "hello_world_widget.qt_hello_world:HelloWorld"
+
+[project.entry-points."togax_hello_world.backend.toga_cocoa"]
+HelloWorld = "hello_world_widget.cocoa_hello_world:HelloWorld"
+
+[project.entry-points."togax_hello_world.backend.toga_web"]
+HelloWorld = "hello_world_widget.web_hello_world:HelloWorld"

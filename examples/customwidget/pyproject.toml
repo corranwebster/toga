@@ -1,0 +1,64 @@
+[build-system]
+requires = ["briefcase"]
+
+[project]
+name = "customwidget"
+version = "0.0.1"
+
+[tool.briefcase]
+project_name = "Custom Widget"
+bundle = "org.beeware.toga.examples"
+version = "0.0.1"
+url = "https://beeware.org"
+license.file = "LICENSE"
+author = "Tiberius Yak"
+author_email = "tiberius@beeware.org"
+
+[tool.briefcase.app.customwidget]
+formal_name = "Custom Widget"
+description = "A testing app"
+sources = ["customwidget"]
+requires = [
+    "../../travertino",
+    "../../core",
+    "./helloworld",
+]
+
+[tool.briefcase.app.customwidget.macOS]
+requires = [
+    "../../cocoa",
+    "std-nslog>=1.0.0",
+]
+
+[tool.briefcase.app.customwidget.linux]
+requires = [
+    "../../gtk",
+]
+
+[tool.briefcase.app.customwidget.windows]
+requires = [
+    "../../winforms",
+]
+
+# Mobile deployments
+[tool.briefcase.app.customwidget.iOS]
+requires = [
+    "../../iOS",
+    "std-nslog>=1.0.0",
+]
+
+[tool.briefcase.app.customwidget.android]
+supported = false
+
+# Web deployment
+[tool.briefcase.app.customwidget.web]
+requires = [
+    "../../web",
+]
+
+# New Widgets
+[project.entry-points."togax_hello_world.backend.toga_qt"]
+HelloWorld = "customwidget.qt_hello_world:HelloWorld"
+
+[project.entry-points."togax_hello_world.backend.toga_cocoa"]
+HelloWorld = "customwidget.cocoa_hello_world:HelloWorld"
