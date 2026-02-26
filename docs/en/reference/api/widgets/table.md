@@ -112,7 +112,6 @@ table = toga.Table(
 
 For more complex data you can define your own [custom data sources](/topics/data-sources.md).
 
-
 ## Notes
 
 - Widgets in cells is a beta API which may change in future, and is currently only supported on macOS.
