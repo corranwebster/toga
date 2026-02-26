@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 import toga
-from toga.sources import ListListener, TreeListener, TreeSource
+from toga.sources import AccessorColumn, ListListener, TreeListener, TreeSource
 from toga.style.pack import Pack
 
 from ..conftest import skip_on_platforms
@@ -122,11 +122,16 @@ async def widget(source, on_select_handler, on_activate_handler):
 async def headerless_widget(source, on_select_handler):
     skip_on_platforms("iOS", "android", "windows")
     return toga.Tree(
+        columns=[
+            AccessorColumn(None, "a"),
+            AccessorColumn(None, "b"),
+            AccessorColumn(None, "c"),
+        ],
         data=source,
         missing_value="MISSING!",
-        accessors=["a", "b", "c"],
         on_select=on_select_handler,
         style=Pack(flex=1),
+        show_headings=False,
     )
 
 

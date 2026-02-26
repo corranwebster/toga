@@ -468,7 +468,7 @@ def test_disable_no_op(table):
     ],
 )
 def test_create_data(data, all_attributes, extra_attributes):
-    """Data can be set from a variety of sources."""
+    """Data can be created from a variety of sources."""
 
     table = toga.Table(
         [
@@ -662,7 +662,7 @@ def test_set_data(table, on_select_handler, data, all_attributes, extra_attribut
 
 
 def test_set_data_override_acessors(table, on_select_handler):
-    """Data can be set from a variety of sources."""
+    """Setting data usually preserves accessors."""
 
     # The selection hasn't changed yet.
     on_select_handler.assert_not_called()
