@@ -44,8 +44,8 @@ class Table(Widget, Generic[Value]):
         on_select: toga.widgets.table.OnSelectHandler | None = None,
         on_activate: toga.widgets.table.OnActivateHandler | None = None,
         missing_value: str = "",
-        show_headings: bool | None = None,
         *,
+        show_headings: bool | None = None,
         headings: Iterable[str] | None = None,
         **kwargs,
     ):
@@ -68,17 +68,6 @@ class Table(Widget, Generic[Value]):
             This can be an object which implements the `ListSourceT` protocol, an
             Iterable object, or None.  An Iterable object will be automatically
             converted to a [`ListSource`][toga.sources.ListSource].
-
-        :param multiple_select: Does the table allow multiple selection?
-        :param on_select: Initial [`on_select`][toga.Table.on_select] handler.
-        :param on_activate: Initial [`on_activate`][toga.Table.on_activate] handler.
-        :param missing_value: The string that will be used to populate a cell when the
-            value provided by its accessor is [`None`][], or the accessor isn't
-            defined.
-        :param show_headings: Whether or not to show headings at the top of the table.
-            For backwards compatibility, this is set to False if no columns or headings
-            are provided.
-        :param headings: [Deprecated] A list of heading strings for columns.
         :param accessors: [Deprecated] When the data is provided as an iterable, the
             `ListSource` created by the Table will try to derive its accessors from the
             Columns.  However in some cases this may need to be overridden, for example
@@ -107,10 +96,20 @@ class Table(Widget, Generic[Value]):
             tell the source how to map lists and tuples to accessor values. This
             ordering does not change even when columns are added or removed.
 
+        :param multiple_select: Does the table allow multiple selection?
+        :param on_select: Initial [`on_select`][toga.Table.on_select] handler.
+        :param on_activate: Initial [`on_activate`][toga.Table.on_activate] handler.
+        :param missing_value: The string that will be used to populate a cell when the
+            value provided by its accessor is [`None`][], or the accessor isn't
+            defined.
+        :param show_headings: Whether or not to show headings at the top of the table.
+            For backwards compatibility, this is set to False if no columns or headings
+            are provided.
+        :param headings: [Deprecated] A list of heading strings for columns.
+
         :param kwargs: Initial style properties.
         """
         self._data: ListSourceT | ListSource
-        self._data_accessor_order: list[str]
 
         self._missing_value = missing_value if missing_value else ""
         self._multiple_select = multiple_select
@@ -187,6 +186,10 @@ class Table(Widget, Generic[Value]):
         ######################################################################
 
         self._columns: list[ColumnT] = columns
+
+        # Prime some properties that need to exist before the tree is created.
+        self.on_select = None
+        self.on_activate = None
 
         super().__init__(id, style, **kwargs)
 

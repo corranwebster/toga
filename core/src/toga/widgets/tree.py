@@ -44,13 +44,12 @@ class Tree(Widget):
         on_select: toga.widgets.tree.OnSelectHandler | None = None,
         on_activate: toga.widgets.tree.OnActivateHandler | None = None,
         missing_value: str = "",
-        show_headings: bool = True,
         *,
+        show_headings: bool | None = None,
         headings: Iterable[str] | None = None,
         **kwargs,
     ):
         """Create a new Tree widget.
-
 
         :param columns: The column objects or heading strings for the tree.
             Column objects must implement the ['ColumnT'][toga.sources.ColumnT]
@@ -67,11 +66,11 @@ class Tree(Widget):
             applied to the widget.
         :param data: Initial [`data`][toga.Tree.data] to be displayed in the tree.
 
-        :param accessors: When the data is provided as an iterable, the `ListSource`
-            created by the Tree will try to derive its accessors from the Columns.
-            However in some cases this may need to be overridden, for example if there
-            should be more accessors than columns, or when the attribute for a column
-            given as a heading string doesn't match the string.
+        :param accessors: [Deprecated] When the data is provided as an iterable, the
+            `TreeSource` created by the Tree will try to derive its accessors from the
+            Columns.  However in some cases this may need to be overridden, for example
+            if there should be more accessors than columns, or when the attribute for a
+            column given as a heading string doesn't match the string.
 
             The `accessors` argument must be either:
 
@@ -110,7 +109,6 @@ class Tree(Widget):
         self._data: TreeSourceT | TreeSource
 
         self._missing_value = missing_value if missing_value else ""
-        self._show_headings = show_headings
         self._multiple_select = multiple_select
 
         ######################################################################
@@ -122,14 +120,20 @@ class Tree(Widget):
                     "The 'headings' keyword argument is deprecated, "
                     "use 'columns' instead.",
                     DeprecationWarning,
-                    stacklevel=-2,
+                    stacklevel=2,
                 )
                 columns = headings
             else:
                 raise TypeError("Can't specify columns and headings at the same time.")
-        ######################################################################
-        # End backwards compatibility
-        ######################################################################
+        if accessors is not None:
+            warnings.warn(
+                "The `accessors` argument is deprecated. To specify a non-default "
+                "accessor for a column, use an AccessorColumn. To specify the "
+                "ordering of accessors use a `TreeSource` with an `accessors` "
+                "argument for the data.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         if columns is None:
             if accessors is None:
@@ -139,7 +143,9 @@ class Tree(Widget):
             columns = AccessorColumn.columns_from_headings_and_accessors(
                 None, accessors
             )
-            self._show_headings = False
+            if show_headings is None:
+                # Don't show headings if only given accessors.
+                show_headings = False
         elif isinstance(accessors, Mapping):
             columns = [
                 AccessorColumn(column, accessors.get(column, None))
@@ -152,30 +158,50 @@ class Tree(Widget):
                 AccessorColumn(column, accessor) if isinstance(column, str) else column
                 for column, accessor in zip(columns, accessors, strict=False)
             ]
+        ######################################################################
+        # End backwards compatibility
+        ######################################################################
         else:
             columns = [
                 AccessorColumn(column) if isinstance(column, str) else column
                 for column in columns
             ]
 
-        self._columns: list[ColumnT] = columns
+        ######################################################################
+        # 2026-02: Backwards compatibility for <= 0.5.3
+        #
+        # When removing backwards compatibility for accessors, show_headings can
+        # default to True, and this logic can be removed.
+        ######################################################################
+        self._show_headings = show_headings if show_headings is not None else True
+        ######################################################################
+        # End backwards compatibility
+        ######################################################################
 
-        # The accessors used for ad-hoc TreeSources may have more than just column
-        # accessors.
-        if accessors is None:
-            self._data_accessor_order = [
-                accessor for accessor in self.accessors if accessor is not None
-            ]
-        elif isinstance(accessors, Mapping):
-            self._data_accessor_order = list(accessors.values())
-        else:
-            self._data_accessor_order = list(accessors)
+        self._columns: list[ColumnT] = columns
 
         # Prime some properties that need to exist before the tree is created.
         self.on_select = None
         self.on_activate = None
 
         super().__init__(id, style, **kwargs)
+
+        if not isinstance(data, Source):
+            if accessors is None or isinstance(accessors, Mapping):
+                # Use the column's accessors
+                accessor_order = [
+                    column.accessor
+                    for column in columns
+                    if getattr(column, "accessor", None) is not None
+                ]
+            else:
+                # use the accessors parameter
+                accessor_order = list(accessors)
+
+            if data is None:
+                data = TreeSource(accessors=accessor_order, data=[])
+            else:
+                data = TreeSource(accessors=accessor_order, data=data)
 
         self.data = data
 
@@ -216,15 +242,25 @@ class Tree(Widget):
 
     @data.setter
     def data(self, data: TreeSourceT | object | None) -> None:
-        if hasattr(self, "_data"):
+        old_data = getattr(self, "_data", None)
+        if old_data is not None:
             self._data.remove_listener(self._impl)
 
         if data is None:
-            self._data = TreeSource(accessors=self._data_accessor_order, data=[])
-        elif isinstance(data, Source):
+            data = []
+        if isinstance(data, Source):
             self._data = data
         else:
-            self._data = TreeSource(accessors=self._data_accessor_order, data=data)
+            # try to copy the accessors from the previous data source
+            accessors = getattr(old_data, "accessors", None)
+            if accessors is None:
+                # failing that, use the accessors from the columns, if any
+                accessors = [
+                    column.accessor
+                    for column in self.columns
+                    if getattr(column, "accessor", None) is not None
+                ]
+            self._data = TreeSource(accessors=accessors, data=data)
 
         self._data.add_listener(self._impl)
         self._impl.change_source(source=self._data)
@@ -325,9 +361,10 @@ class Tree(Widget):
         :param index: The index at which to insert the column, or the column (or its
             accessor [Deprecated]) before which the new column should be inserted.
         :param column: The new column, or a heading string for the new column.
-        :param accessor: An accessor to use if a heading string is supplied rather
-            than a column object. If not specified, an accessor will be derived from
-            the heading. An accessor *must* be specified if the column is None.
+        :param accessor: [Deprecated] An accessor to use if a heading string is
+            supplied rather than a column object. If not specified, an accessor will
+            be derived from the heading. An accessor *must* be specified if the
+            column is None.
         """
         ######################################################################
         # 2026-02: Backwards compatibility for <= 0.5.3
@@ -358,14 +395,14 @@ class Tree(Widget):
                 stacklevel=-2,
             )
 
+        ######################################################################
+        # 2026-02: Backwards compatibility for <= 0.5.3
+        ######################################################################
         if isinstance(index, str):
             index = self.accessors.index(index)
-            warnings.warn(
-                "Using accessors for an insertion index is deprecated. "
-                "Use a column instead.",
-                DeprecationWarning,
-                stacklevel=-2,
-            )
+        ######################################################################
+        # End backwards compatibility
+        ######################################################################
         elif not isinstance(index, int):
             index = self._columns.index(index)
         else:
@@ -401,20 +438,14 @@ class Tree(Widget):
         :param column: The index of the column to remove, or the column (or its
             accessor [Deprecated]) to remove.
         """
+        ######################################################################
+        # 2026-02: Backwards compatibility for <= 0.5.3
+        ######################################################################
         if isinstance(column, str):
-            ######################################################################
-            # 2026-02: Backwards compatibility for <= 0.5.3
-            ######################################################################
-            warnings.warn(
-                "Using accessors for a removal index is deprecated. "
-                "Use an integer index or Column object instead.",
-                DeprecationWarning,
-                stacklevel=-2,
-            )
             index = self.accessors.index(column)
-            ######################################################################
-            # End backwards compatibility
-            ######################################################################
+        ######################################################################
+        # End backwards compatibility
+        ######################################################################
         elif not isinstance(column, int):
             index = self._columns.index(column)
         else:
@@ -433,6 +464,11 @@ class Tree(Widget):
         return self._columns.copy()
 
     @property
+    def show_headings(self) -> bool:
+        """Whether or not the table shows a header at the top (read-only)"""
+        return self._show_headings
+
+    @property
     def headings(self) -> list[str] | None:
         """The column headings for the tree (read-only)"""
         print("here")
@@ -441,10 +477,22 @@ class Tree(Widget):
         else:
             return [column.heading for column in self._columns]
 
+    ######################################################################
+    # 2026-02: Backwards compatibility for <= 0.5.3
+    ######################################################################
     @property
     def accessors(self) -> list[str | None]:
-        """The accessors used to populate the tree (read-only)"""
+        """The list of column accessors (read-only) [Deprecated]"""
+        warnings.warn(
+            "Using accessors is deprecated, use columns instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return [getattr(column, "accessor", None) for column in self._columns]
+
+    ######################################################################
+    # End backwards compatibility
+    ######################################################################
 
     @property
     def missing_value(self) -> str:

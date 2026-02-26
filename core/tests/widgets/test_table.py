@@ -91,7 +91,7 @@ def test_table_created():
 
 
 def test_table_created_explicit_show_headings():
-    """A minimal Table can be created."""
+    """A minimal Table can be created with show headings True."""
     table = toga.Table(["First", "Second"], show_headings=True)
     assert table._impl.interface == table
     assert_action_performed(table, "create Table")
@@ -116,7 +116,7 @@ def test_table_created_explicit_show_headings():
 
 
 def test_table_created_explicit_show_headings_false():
-    """A minimal Table can be created."""
+    """A minimal Table can be created with show headings False."""
     table = toga.Table(["First", "Second"], show_headings=False)
     assert table._impl.interface == table
     assert_action_performed(table, "create Table")
@@ -330,7 +330,7 @@ def test_create_no_columns():
 
 
 def test_create_no_columns_show_headings():
-    """A Table can be created with no columns."""
+    """A Table can be created with no columns and show_headings True."""
     with pytest.warns(
         DeprecationWarning,
         match=r"The `accessors` argument is deprecated. To specify a non-default "
