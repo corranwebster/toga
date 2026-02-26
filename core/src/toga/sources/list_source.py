@@ -128,7 +128,7 @@ class ListSource(Source):
             self._data = []
 
     @property
-    def accessors(self):
+    def accessors(self) -> list[str]:
         """The attribute names for accessing the value in each column of a row."""
         return self._accessors.copy()
 
