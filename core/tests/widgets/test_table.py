@@ -3,12 +3,31 @@ from unittest.mock import Mock, patch
 import pytest
 
 import toga
-from toga.sources import AccessorColumn, ListSource
+from toga.sources import AccessorColumn, ListSource, Source
 from toga_dummy.utils import (
     assert_action_not_performed,
     assert_action_performed,
     assert_action_performed_with,
 )
+
+
+class CustomRow:
+    def __init__(self, key, value, extra):
+        self.key = key
+        self.value = value
+        self.extra = extra
+
+
+class ReadonlySource(Source):
+    def __init__(self, data):
+        super().__init__()
+        self._data = list(data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __getitem__(self, index):
+        return self._data[index]
 
 
 @pytest.fixture
@@ -54,13 +73,68 @@ def test_table_created():
 
     assert len(table.data) == 0
     assert table.headings == ["First", "Second"]
-    assert table.accessors == ["first", "second"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["first", "second"]
+    assert table.data.accessors == ["first", "second"]
     assert table.columns == [
         AccessorColumn("First", "first"),
         AccessorColumn("Second", "second"),
     ]
     assert not table.multiple_select
     assert table.show_headings
+    assert table.missing_value == ""
+    assert table.on_select._raw is None
+    assert table.on_activate._raw is None
+
+
+def test_table_created_explicit_show_headings():
+    """A minimal Table can be created."""
+    table = toga.Table(["First", "Second"], show_headings=True)
+    assert table._impl.interface == table
+    assert_action_performed(table, "create Table")
+
+    assert len(table.data) == 0
+    assert table.headings == ["First", "Second"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["first", "second"]
+    assert table.data.accessors == ["first", "second"]
+    assert table.columns == [
+        AccessorColumn("First", "first"),
+        AccessorColumn("Second", "second"),
+    ]
+    assert not table.multiple_select
+    assert table.show_headings
+    assert table.missing_value == ""
+    assert table.on_select._raw is None
+    assert table.on_activate._raw is None
+
+
+def test_table_created_explicit_show_headings_false():
+    """A minimal Table can be created."""
+    table = toga.Table(["First", "Second"], show_headings=False)
+    assert table._impl.interface == table
+    assert_action_performed(table, "create Table")
+
+    assert len(table.data) == 0
+    assert table.headings is None
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["first", "second"]
+    assert table.data.accessors == ["first", "second"]
+    assert table.columns == [
+        AccessorColumn("First", "first"),
+        AccessorColumn("Second", "second"),
+    ]
+    assert not table.multiple_select
+    assert not table.show_headings
     assert table.missing_value == ""
     assert table.on_select._raw is None
     assert table.on_activate._raw is None
@@ -79,7 +153,12 @@ def test_table_create_columns():
 
     assert len(table.data) == 0
     assert table.headings == ["First", "Second"]
-    assert table.accessors == ["first", "second"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["first", "second"]
+    assert table.data.accessors == ["first", "second"]
     assert table.columns == [
         AccessorColumn("First", "first"),
         AccessorColumn("Second", "second"),
@@ -99,7 +178,12 @@ def test_table_create_columns_with_accessors():
 
     assert len(table.data) == 0
     assert table.headings == ["First", "Second"]
-    assert table.accessors == ["primus", "secundus"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["primus", "secundus"]
+    assert table.data.accessors == ["primus", "secundus"]
     assert table.columns == [
         AccessorColumn("First", "primus"),
         AccessorColumn("Second", "secundus"),
@@ -108,25 +192,37 @@ def test_table_create_columns_with_accessors():
 
 def test_create_with_values(source, on_select_handler, on_activate_handler):
     """A Table can be created with initial values."""
-    table = toga.Table(
-        ["First", "Second"],
-        id="foobar",
-        data=source,
-        accessors=["primus", "secondus"],
-        multiple_select=True,
-        on_select=on_select_handler,
-        on_activate=on_activate_handler,
-        missing_value="Boo!",
-        # A style property
-        width=256,
-    )
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"The `accessors` argument is deprecated. To specify a non-default "
+        r"accessor for a column, use an AccessorColumn. To specify the "
+        r"ordering of accessors use a `ListSource` with an `accessors` "
+        r"argument for the data.",
+    ):
+        table = toga.Table(
+            ["First", "Second"],
+            id="foobar",
+            data=source,
+            accessors=["primus", "secondus"],
+            multiple_select=True,
+            on_select=on_select_handler,
+            on_activate=on_activate_handler,
+            missing_value="Boo!",
+            # A style property
+            width=256,
+        )
     assert table._impl.interface == table
     assert_action_performed(table, "create Table")
 
     assert table.id == "foobar"
     assert len(table.data) == 3
     assert table.headings == ["First", "Second"]
-    assert table.accessors == ["primus", "secondus"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["primus", "secondus"]
+    assert table.data.accessors == ["key", "value"]
     assert table.columns == [
         AccessorColumn("First", "primus"),
         AccessorColumn("Second", "secondus"),
@@ -140,16 +236,28 @@ def test_create_with_values(source, on_select_handler, on_activate_handler):
 
 def test_create_with_accessor_overrides():
     """A Table can partially override accessors."""
-    table = toga.Table(
-        ["First", "Second"],
-        accessors={"First": "override"},
-    )
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"The `accessors` argument is deprecated. To specify a non-default "
+        r"accessor for a column, use an AccessorColumn. To specify the "
+        r"ordering of accessors use a `ListSource` with an `accessors` "
+        r"argument for the data.",
+    ):
+        table = toga.Table(
+            ["First", "Second"],
+            accessors={"First": "override"},
+        )
     assert table._impl.interface == table
     assert_action_performed(table, "create Table")
 
     assert len(table.data) == 0
     assert table.headings == ["First", "Second"]
-    assert table.accessors == ["override", "second"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["override", "second"]
+    assert table.data.accessors == ["override", "second"]
     assert table.columns == [
         AccessorColumn("First", "override"),
         AccessorColumn("Second", "second"),
@@ -162,16 +270,28 @@ def test_create_headings():
         DeprecationWarning,
         match="The 'headings' keyword argument is deprecated, use 'columns' instead.",
     ):
-        table = toga.Table(
-            headings=["First", "Second"],
-            accessors=["primus", "secondus"],
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match=r"The `accessors` argument is deprecated. To specify a non-default "
+            r"accessor for a column, use an AccessorColumn. To specify the "
+            r"ordering of accessors use a `ListSource` with an `accessors` "
+            r"argument for the data.",
+        ):
+            table = toga.Table(
+                headings=["First", "Second"],
+                accessors=["primus", "secondus"],
+            )
     assert table._impl.interface == table
     assert_action_performed(table, "create Table")
 
     assert len(table.data) == 0
     assert table.headings == ["First", "Second"]
-    assert table.accessors == ["primus", "secondus"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["primus", "secondus"]
+    assert table.data.accessors == ["primus", "secondus"]
     assert table.columns == [
         AccessorColumn("First", "primus"),
         AccessorColumn("Second", "secondus"),
@@ -180,20 +300,65 @@ def test_create_headings():
 
 def test_create_no_columns():
     """A Table can be created with no columns."""
-    table = toga.Table(
-        columns=None,
-        accessors=["primus", "secondus"],
-    )
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"The `accessors` argument is deprecated. To specify a non-default "
+        r"accessor for a column, use an AccessorColumn. To specify the "
+        r"ordering of accessors use a `ListSource` with an `accessors` "
+        r"argument for the data.",
+    ):
+        table = toga.Table(
+            columns=None,
+            accessors=["primus", "secondus"],
+        )
     assert table._impl.interface == table
     assert_action_performed(table, "create Table")
 
     assert len(table.data) == 0
     assert table.headings is None
-    assert table.accessors == ["primus", "secondus"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["primus", "secondus"]
+    assert table.data.accessors == ["primus", "secondus"]
     assert table.columns == [
         AccessorColumn(None, "primus"),
         AccessorColumn(None, "secondus"),
     ]
+    assert not table.show_headings
+
+
+def test_create_no_columns_show_headings():
+    """A Table can be created with no columns."""
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"The `accessors` argument is deprecated. To specify a non-default "
+        r"accessor for a column, use an AccessorColumn. To specify the "
+        r"ordering of accessors use a `ListSource` with an `accessors` "
+        r"argument for the data.",
+    ):
+        table = toga.Table(
+            columns=None,
+            accessors=["primus", "secondus"],
+            show_headings=True,
+        )
+    assert table._impl.interface == table
+    assert_action_performed(table, "create Table")
+
+    assert len(table.data) == 0
+    assert table.headings == ["", ""]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["primus", "secondus"]
+    assert table.data.accessors == ["primus", "secondus"]
+    assert table.columns == [
+        AccessorColumn(None, "primus"),
+        AccessorColumn(None, "secondus"),
+    ]
+    assert table.show_headings
 
 
 def test_create_columns_required():
@@ -269,6 +434,168 @@ def test_disable_no_op(table):
             False,
             False,
         ),
+        # No data
+        (
+            None,
+            False,
+            False,
+        ),
+        # List source
+        (
+            ListSource(
+                accessors=["key", "value"],
+                data=[
+                    {"key": "Alice", "value": 123, "extra": "extra1"},
+                    {"key": "Bob", "value": 234, "extra": "extra2"},
+                    {"key": "Charlie", "value": 345, "extra": "extra3"},
+                ],
+            ),
+            True,
+            True,
+        ),
+        # Custom read-only source
+        (
+            ReadonlySource(
+                data=[
+                    CustomRow("Alice", 123, "extra1"),
+                    CustomRow("Bob", 234, "extra2"),
+                    CustomRow("Charlie", 345, "extra3"),
+                ]
+            ),
+            True,
+            True,
+        ),
+    ],
+)
+def test_create_data(data, all_attributes, extra_attributes):
+    """Data can be set from a variety of sources."""
+
+    table = toga.Table(
+        [
+            AccessorColumn("Title", "key"),
+            AccessorColumn("Value", "value"),
+        ],
+        data=data,
+    )
+
+    # The implementation is a listener on the new data
+    assert table._impl in table.data.listeners
+
+    if not isinstance(data, Source):
+        # A ListSource has been constructed
+        assert isinstance(table.data, ListSource)
+    else:
+        # The data is passed directly
+        assert table.data is data
+    if data is not None:
+        assert len(table.data) == 3
+    else:
+        assert len(table.data) == 0
+
+    # The table's accessors are what we expect
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "value"]
+
+    # The source's accessors are what we expect, if it has them
+    if isinstance(table.data, ListSource):
+        assert table.data.accessors == ["key", "value"]
+
+    # The accessors are mapped in order.
+    if data is not None:
+        assert table.data[0].key == "Alice"
+        assert table.data[2].key == "Charlie"
+
+    if all_attributes:
+        assert table.data[1].key == "Bob"
+        assert table.data[0].value == 123
+        assert table.data[1].value == 234
+        assert table.data[2].value == 345
+    elif data is not None:
+        assert table.data[1].key == 1234
+
+    if extra_attributes:
+        assert table.data[0].extra == "extra1"
+        assert table.data[1].extra == "extra2"
+        assert table.data[2].extra == "extra3"
+
+
+@pytest.mark.parametrize(
+    "data, all_attributes, extra_attributes",
+    [
+        # List of lists
+        (
+            [
+                ["Alice", 123, "extra1"],
+                ["Bob", 234, "extra2"],
+                ["Charlie", 345, "extra3"],
+            ],
+            True,
+            False,
+        ),
+        # List of tuples
+        (
+            [
+                ("Alice", 123, "extra1"),
+                ("Bob", 234, "extra2"),
+                ("Charlie", 345, "extra3"),
+            ],
+            True,
+            False,
+        ),
+        # List of dictionaries
+        (
+            [
+                {"key": "Alice", "value": 123, "extra": "extra1"},
+                {"key": "Bob", "value": 234, "extra": "extra2"},
+                {"key": "Charlie", "value": 345, "extra": "extra3"},
+            ],
+            True,
+            True,
+        ),
+        # List of bare data
+        (
+            [
+                "Alice",
+                1234,
+                "Charlie",
+            ],
+            False,
+            False,
+        ),
+        # No data
+        (
+            None,
+            False,
+            False,
+        ),
+        # List source
+        (
+            ListSource(
+                accessors=["key", "value"],
+                data=[
+                    {"key": "Alice", "value": 123, "extra": "extra1"},
+                    {"key": "Bob", "value": 234, "extra": "extra2"},
+                    {"key": "Charlie", "value": 345, "extra": "extra3"},
+                ],
+            ),
+            True,
+            True,
+        ),
+        # Custom read-only source
+        (
+            ReadonlySource(
+                data=[
+                    CustomRow("Alice", 123, "extra1"),
+                    CustomRow("Bob", 234, "extra2"),
+                    CustomRow("Charlie", 345, "extra3"),
+                ]
+            ),
+            True,
+            True,
+        ),
     ],
 )
 def test_set_data(table, on_select_handler, data, all_attributes, extra_attributes):
@@ -293,26 +620,136 @@ def test_set_data(table, on_select_handler, data, all_attributes, extra_attribut
     # This triggered the select handler
     on_select_handler.assert_called_once_with(table)
 
-    # A ListSource has been constructed
-    assert isinstance(table.data, ListSource)
-    assert len(table.data) == 3
+    if not isinstance(data, Source):
+        # A ListSource has been constructed
+        assert isinstance(table.data, ListSource)
+    else:
+        # The data is passed directly
+        assert table.data is data
+    if data is not None:
+        assert len(table.data) == 3
+    else:
+        assert len(table.data) == 0
+
+    # The table's accessors are what we expect
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "value"]
+
+    # The source's accessors are what we expect, if it has them
+    if isinstance(table.data, ListSource):
+        assert table.data.accessors == ["key", "value"]
 
     # The accessors are mapped in order.
-    assert table.data[0].key == "Alice"
-    assert table.data[2].key == "Charlie"
+    if data is not None:
+        assert table.data[0].key == "Alice"
+        assert table.data[2].key == "Charlie"
 
     if all_attributes:
         assert table.data[1].key == "Bob"
         assert table.data[0].value == 123
         assert table.data[1].value == 234
         assert table.data[2].value == 345
-    else:
+    elif data is not None:
         assert table.data[1].key == 1234
 
     if extra_attributes:
         assert table.data[0].extra == "extra1"
         assert table.data[1].extra == "extra2"
         assert table.data[2].extra == "extra3"
+
+
+def test_set_data_override_acessors(table, on_select_handler):
+    """Data can be set from a variety of sources."""
+
+    # The selection hasn't changed yet.
+    on_select_handler.assert_not_called()
+
+    # The implementation is a listener on the data
+    old_data = table.data
+    assert table._impl in old_data.listeners
+
+    # Change the data
+    table.data = ListSource(
+        accessors=["key", "value", "extra"],
+        data=[
+            {"key": "Alice", "value": 123, "extra": "extra1"},
+            {"key": "Bob", "value": 234, "extra": "extra2"},
+            {"key": "Charlie", "value": 345, "extra": "extra3"},
+        ],
+    )
+
+    # The implementation is not a listener on the old data
+    assert table._impl not in old_data.listeners
+
+    # The implementation is a listener on the new data
+    assert table._impl in table.data.listeners
+
+    # This triggered the select handler
+    on_select_handler.assert_called_once_with(table)
+
+    # The table's accessors have not changed
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "value"]
+
+    # But the source's accessors have changed
+    assert table.data.accessors == ["key", "value", "extra"]
+
+    # Change the data to a list
+    table.data = [
+        {"key": "Alice", "value": 123, "extra": "extra1"},
+        {"key": "Bob", "value": 234, "extra": "extra2"},
+        {"key": "Charlie", "value": 345, "extra": "extra3"},
+    ]
+
+    # The accessors have not changed
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "value"]
+    assert table.data.accessors == ["key", "value", "extra"]
+
+    # Change the data to something without accessors
+    table.data = ReadonlySource(
+        data=[
+            CustomRow("Alice", 123, "extra1"),
+            CustomRow("Bob", 234, "extra2"),
+            CustomRow("Charlie", 345, "extra3"),
+        ]
+    )
+
+    # The table accessors have not changed
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "value"]
+
+    # but the data doesn't have accessors
+    assert not hasattr(table.data, "accessors")
+
+    # Change the data back to a list
+    table.data = [
+        {"key": "Alice", "value": 123, "extra": "extra1"},
+        {"key": "Bob", "value": 234, "extra": "extra2"},
+        {"key": "Charlie", "value": 345, "extra": "extra3"},
+    ]
+
+    # The table's accessors have not changed
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "value"]
+
+    # But the source's accessors have changed
+    assert table.data.accessors == ["key", "value"]
 
 
 def test_single_selection(table, on_select_handler):
@@ -420,7 +857,12 @@ def test_insert_column_object_by_index(table):
         column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "New Column", "Value"]
-    assert table.accessors == ["key", "extra", "value"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "extra", "value"]
+    assert table.data.accessors == ["key", "value"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
         AccessorColumn("New Column", "extra"),
@@ -432,10 +874,7 @@ def test_insert_column_heading_by_accessor(table):
     """A column heading being inserted at an accessor is deprecated."""
     with pytest.warns(
         DeprecationWarning,
-        match=(
-            "Using accessors for an insertion index is deprecated. "
-            "Use a column instead."
-        ),
+        match=(r"Using accessors is deprecated, use columns instead."),
     ):
         table.insert_column("value", AccessorColumn("New Column", "extra"))
 
@@ -447,7 +886,12 @@ def test_insert_column_heading_by_accessor(table):
         column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "New Column", "Value"]
-    assert table.accessors == ["key", "extra", "value"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "extra", "value"]
+    assert table.data.accessors == ["key", "value"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
         AccessorColumn("New Column", "extra"),
@@ -458,7 +902,11 @@ def test_insert_column_heading_by_accessor(table):
 def test_insert_column_unknown_accessor(table):
     """If the insertion index accessor is unknown, an error is raised."""
     with pytest.raises(ValueError, match=r"not in list"):
-        table.insert_column("unknown", AccessorColumn("New Column", "extra"))
+        with pytest.warns(
+            DeprecationWarning,
+            match=r"Using accessors is deprecated, use columns instead.",
+        ):
+            table.insert_column("unknown", AccessorColumn("New Column", "extra"))
 
 
 def test_insert_column_heading_column_object_index(table):
@@ -475,7 +923,11 @@ def test_insert_column_heading_column_object_index(table):
         column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "New Column", "Value"]
-    assert table.accessors == ["key", "extra", "value"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "extra", "value"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
         AccessorColumn("New Column", "extra"),
@@ -503,7 +955,11 @@ def test_insert_column_heading_by_index(table):
         column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "New Column", "Value"]
-    assert table.accessors == ["key", "extra", "value"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "extra", "value"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
         AccessorColumn("New Column", "extra"),
@@ -528,7 +984,11 @@ def test_insert_column_heading_by_index_heading_argument(table):
         column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "New Column", "Value"]
-    assert table.accessors == ["key", "extra", "value"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "extra", "value"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
         AccessorColumn("New Column", "extra"),
@@ -573,7 +1033,11 @@ def test_warn_accessor_ignored(table):
         column=AccessorColumn("New Column", "new_column"),
     )
     assert table.headings == ["Title", "New Column", "Value"]
-    assert table.accessors == ["key", "new_column", "value"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "new_column", "value"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
         AccessorColumn("New Column", "new_column"),
@@ -594,7 +1058,11 @@ def test_insert_column_big_index(table):
         column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "Value", "New Column"]
-    assert table.accessors == ["key", "value", "extra"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "value", "extra"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
         AccessorColumn("Value", "value"),
@@ -615,7 +1083,11 @@ def test_insert_column_negative_index(table):
         column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["New Column", "Title", "Value"]
-    assert table.accessors == ["extra", "key", "value"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["extra", "key", "value"]
     assert table.columns == [
         AccessorColumn("New Column", "extra"),
         AccessorColumn("Title", "key"),
@@ -637,7 +1109,11 @@ def test_insert_column_big_negative_index(table):
         column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["New Column", "Title", "Value"]
-    assert table.accessors == ["extra", "key", "value"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["extra", "key", "value"]
     assert table.columns == [
         AccessorColumn("New Column", "extra"),
         AccessorColumn("Title", "key"),
@@ -658,7 +1134,11 @@ def test_insert_column_no_accessor(table):
         column=AccessorColumn("New Column", "new_column"),
     )
     assert table.headings == ["Title", "New Column", "Value"]
-    assert table.accessors == ["key", "new_column", "value"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "new_column", "value"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
         AccessorColumn("New Column", "new_column"),
@@ -668,7 +1148,16 @@ def test_insert_column_no_accessor(table):
 
 def test_insert_column_no_headings(source):
     """A column can be inserted into a table with no headings."""
-    table = toga.Table(columns=None, accessors=["key", "value"], data=source)
+    with pytest.warns(
+        DeprecationWarning,
+        match=(
+            r"The `accessors` argument is deprecated. To specify a non-default "
+            r"accessor for a column, use an AccessorColumn\. To specify the "
+            r"ordering of accessors use a `ListSource` with an `accessors` "
+            r"argument for the data\."
+        ),
+    ):
+        table = toga.Table(columns=None, accessors=["key", "value"], data=source)
 
     table.insert_column(1, AccessorColumn("New Column", "extra"))
 
@@ -680,7 +1169,11 @@ def test_insert_column_no_headings(source):
         column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings is None
-    assert table.accessors == ["key", "extra", "value"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "extra", "value"]
     assert table.columns == [
         AccessorColumn(None, "key"),
         AccessorColumn("New Column", "extra"),
@@ -690,7 +1183,16 @@ def test_insert_column_no_headings(source):
 
 def test_insert_column_no_headings_missing_accessor(source):
     """An accessor is mandatory when adding a column to a table with no headings."""
-    table = toga.Table(columns=None, accessors=["key", "value"], data=source)
+    with pytest.warns(
+        DeprecationWarning,
+        match=(
+            r"The `accessors` argument is deprecated. To specify a non-default "
+            r"accessor for a column, use an AccessorColumn\. To specify the "
+            r"ordering of accessors use a `ListSource` with an `accessors` "
+            r"argument for the data\."
+        ),
+    ):
+        table = toga.Table(columns=None, accessors=["key", "value"], data=source)
 
     with pytest.raises(
         ValueError,
@@ -724,7 +1226,11 @@ def test_insert_column_deprecated_implementation(table):
         accessor="extra",
     )
     assert table.headings == ["Title", "New Column", "Value"]
-    assert table.accessors == ["key", "extra", "value"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "extra", "value"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
         AccessorColumn("New Column", "extra"),
@@ -744,7 +1250,11 @@ def test_append_column_object(table):
         column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "Value", "New Column"]
-    assert table.accessors == ["key", "value", "extra"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "value", "extra"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
         AccessorColumn("Value", "value"),
@@ -764,7 +1274,11 @@ def test_append_column_str(table):
         column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "Value", "New Column"]
-    assert table.accessors == ["key", "value", "extra"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "value", "extra"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
         AccessorColumn("Value", "value"),
@@ -788,7 +1302,11 @@ def test_append_heading_deprecated(table):
         column=AccessorColumn("New Column", "extra"),
     )
     assert table.headings == ["Title", "Value", "New Column"]
-    assert table.accessors == ["key", "value", "extra"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key", "value", "extra"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
         AccessorColumn("Value", "value"),
@@ -818,7 +1336,11 @@ def test_remove_column_object(table):
         index=1,
     )
     assert table.headings == ["Title"]
-    assert table.accessors == ["key"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
     ]
@@ -829,10 +1351,7 @@ def test_remove_column_accessor(table):
 
     with pytest.warns(
         DeprecationWarning,
-        match=(
-            r"Using accessors for a removal index is deprecated\. Use an integer "
-            r"index or Column object instead\."
-        ),
+        match=r"Using accessors is deprecated, use columns instead.",
     ):
         table.remove_column("value")
 
@@ -843,7 +1362,11 @@ def test_remove_column_accessor(table):
         index=1,
     )
     assert table.headings == ["Title"]
-    assert table.accessors == ["key"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
     ]
@@ -854,10 +1377,7 @@ def test_remove_column_unknown_accessor(table):
 
     with pytest.warns(
         DeprecationWarning,
-        match=(
-            r"Using accessors for a removal index is deprecated\. Use an integer "
-            r"index or Column object instead\."
-        ),
+        match=("Using accessors is deprecated, use columns instead."),
     ):
         with pytest.raises(ValueError, match=r"not in list"):
             table.remove_column("unknown")
@@ -881,7 +1401,11 @@ def test_remove_column_index(table):
         index=1,
     )
     assert table.headings == ["Title"]
-    assert table.accessors == ["key"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["key"]
     assert table.columns == [
         AccessorColumn("Title", "key"),
     ]
@@ -899,7 +1423,11 @@ def test_remove_column_negative_index(table):
         index=0,
     )
     assert table.headings == ["Value"]
-    assert table.accessors == ["value"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["value"]
     assert table.columns == [
         AccessorColumn("Value", "value"),
     ]
@@ -907,10 +1435,19 @@ def test_remove_column_negative_index(table):
 
 def test_remove_column_no_headings(table):
     """A column can be removed when there are no headings."""
-    table = toga.Table(
-        columns=None,
-        accessors=["primus", "secondus"],
-    )
+    with pytest.warns(
+        DeprecationWarning,
+        match=(
+            r"The `accessors` argument is deprecated. To specify a non-default "
+            r"accessor for a column, use an AccessorColumn\. To specify the "
+            r"ordering of accessors use a `ListSource` with an `accessors` "
+            r"argument for the data\."
+        ),
+    ):
+        table = toga.Table(
+            columns=None,
+            accessors=["primus", "secondus"],
+        )
 
     table.remove_column(1)
 
@@ -921,7 +1458,11 @@ def test_remove_column_no_headings(table):
         index=1,
     )
     assert table.headings is None
-    assert table.accessors == ["primus"]
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Using accessors is deprecated, use columns instead.",
+    ):
+        assert table.accessors == ["primus"]
     assert table.columns == [
         AccessorColumn(None, "primus"),
     ]

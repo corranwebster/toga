@@ -70,26 +70,6 @@ row = table.data[0]
 print(f"{row.character}, who is age {row.age}, is from {row.planet}")
 ```
 
-Alternatively, you can override them by providing an `accessors` argument. In this example, the table will use "Name" as the visible header, but internally, the attribute "character" will be used:
-
-```python
-import toga
-
-table = toga.Table(
-    columns=["Name", "Age"],
-    accessors={"Name": 'character'},
-    data=[
-        {"character": "Arthur Dent", "age": 42, "planet": "Earth"},
-        {"character": "Ford Prefect", "age": 37, "planet": "Betelgeuse Five"},
-        {"name": "Tricia McMillan", "age": 38, "planet": "Earth"},
-    ]
-)
-
-# Get the details of the first item in the data:
-row = table.data[0]
-print(f"{row.character}, who is age {row.age}, is from {row.planet}")
-```
-
 The set of known accessors and their order for creating rows from lists and tuples is determined at Table creation time and does not change even if columns are added or removed. This may result in missing data when adding a column with a new accessor. To avoid this problem either supply all possible accessors at Table construction time, supply the row data using dictionaries, or use a custom data source.
 
 -8<- "snippets/accessor-values.md"
