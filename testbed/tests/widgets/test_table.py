@@ -76,7 +76,6 @@ async def headerless_widget(source, on_select_handler):
         ],
         data=source,
         missing_value="MISSING!",
-        accessors=["a", "b", "c"],
         on_select=on_select_handler,
         show_headings=False,
         style=Pack(flex=1),
