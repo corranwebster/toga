@@ -342,7 +342,7 @@ class Tree(Widget):
                     "The 'heading' keyword argument is deprecated, "
                     "use 'column' instead.",
                     DeprecationWarning,
-                    stacklevel=-2,
+                    stacklevel=2,
                 )
                 column = heading
             else:
@@ -379,7 +379,7 @@ class Tree(Widget):
                     "The 'heading' keyword argument is deprecated, "
                     "use 'column' instead.",
                     DeprecationWarning,
-                    stacklevel=-2,
+                    stacklevel=2,
                 )
                 column = heading
             else:
@@ -396,7 +396,7 @@ class Tree(Widget):
         elif accessor is not None:
             warnings.warn(
                 "The 'accessor' argument is ignored when a column object is supplied.",
-                stacklevel=-2,
+                stacklevel=2,
             )
 
         ######################################################################
@@ -427,7 +427,7 @@ class Tree(Widget):
                 "Tree implementations of insert_column should expect a column object "
                 "not heading and accessor.",
                 DeprecationWarning,
-                stacklevel=-2,
+                stacklevel=2,
             )
             self._impl.insert_column(
                 index, column.heading, getattr(column, "accessor", None)
