@@ -231,7 +231,7 @@ class Tree(Widget):
         self.native = QTreeView()
 
         self.native_model = TreeSourceModel(
-            getattr(self.interface, "_data", ListSource(self.interface.accessors)),
+            getattr(self.interface, "_data", ListSource([])),
             self.interface._columns[:],
             self.interface.missing_value,
             parent=self.native,

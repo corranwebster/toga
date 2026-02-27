@@ -82,7 +82,7 @@ class Tree(Widget):
                 self.native_tree.remove_column(column)
             self._create_columns()
 
-            types = [TogaRow] + [GdkPixbuf.Pixbuf, str] * len(self.interface.accessors)
+            types = [TogaRow] + [GdkPixbuf.Pixbuf, str] * len(self.interface.columns)
             self.store = Gtk.TreeStore(*types)
 
             for i, row in enumerate(self.interface.data):

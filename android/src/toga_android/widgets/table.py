@@ -76,7 +76,7 @@ class Table(Widget):
         self.table_layout.removeAllViews()
 
         # StretchAllColumns mode causes a divide by zero error if there are no columns.
-        self.table_layout.setStretchAllColumns(bool(self.interface.accessors))
+        self.table_layout.setStretchAllColumns(bool(self.interface.columns))
 
         if source is not None:
             if self.interface._show_headings:

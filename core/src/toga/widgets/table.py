@@ -244,6 +244,10 @@ class Table(Widget, Generic[Value]):
 
         * Otherwise, the value must be an iterable, which is copied into a new
           ListSource. Items are converted as shown [here][listsource-item].
+
+        In the last two cases, when creating a new or empty ListSource, the
+        accessors of the old source are copied to the new one or, if that is
+        impossible, the accessors of the columns are used.
         """
         return self._data
 

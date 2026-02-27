@@ -152,7 +152,7 @@ class Table(Widget):
         self.native = QTableView()
 
         self.native_model = TableSourceModel(
-            getattr(self.interface, "_data", ListSource(self.interface.accessors)),
+            getattr(self.interface, "_data", ListSource([])),
             self.interface._columns[:],
             self.interface.missing_value,
             parent=self.native,

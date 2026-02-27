@@ -237,6 +237,10 @@ class Tree(Widget):
 
         * Otherwise, the value must be a dictionary or an iterable, which is copied
           into a new TreeSource as shown [here][treesource-item].
+
+        In the last two cases, when creating a new or empty TreeSource, the
+        accessors of the old source are copied to the new one or, if that is
+        impossible, the accessors of the columns are used.
         """
         return self._data
 
